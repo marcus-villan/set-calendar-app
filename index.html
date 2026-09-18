@@ -36,8 +36,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Application Entry Script (ES Module) -->
-  <script type="module" crossorigin src="/set-calendar-app/assets/index-BNoKbHdR.js"></script>
-  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-RBxDLTVy.css">
+  <script type="module" crossorigin src="/set-calendar-app/assets/index-Dw9AIbjS.js"></script>
+  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-C1gdH2jH.css">
 </head>
 
 <body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col justify-between select-none overflow-x-hidden pb-16 sm:pb-0">
@@ -209,55 +209,54 @@
     </div>
 
     <!-- -------------------------------------------------------------------
-         4.2 PIN EDITOR MODAL
-         Form interface to create, edit, or delete event pins.
-         ------------------------------------------------------------------- -->
-    <div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-200">
-        <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform translate-y-full sm:translate-y-0 transition-all duration-200">
+     4.2 PIN EDITOR MODAL
+     ------------------------------------------------------------------- -->
+<div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-200">
+    <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform translate-y-full sm:translate-y-0 transition-all duration-200 max-h-[90vh] overflow-y-auto flex flex-col justify-between">
+        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between mb-3">
+            <div>
+                <h3 id="modalDateTitle" class="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">Set Date</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Choose an emoji and name your plan</p>
+            </div>
+            <button id="closeModalBtn" type="button" class="btn-icon">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>
+        </div>
+
+        <!-- Pin Editor Form -->
+        <form id="pinForm" onsubmit="return false;" class="space-y-3 sm:space-y-4">
             
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 id="modalDateTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Set Date</h3>
-                    <p class="text-xs text-slate-400 dark:text-slate-500">Choose an emoji and name your plan</p>
-                </div>
-                <button id="closeModalBtn" type="button" class="btn-icon">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
+            <!-- Event Title Input Field -->
+            <div>
+                <label for="pinTitle" class="label-uppercase mb-1">Plan / Event</label>
+                <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" class="input-field">
             </div>
 
-            <!-- Pin Editor Form -->
-            <form id="pinForm" onsubmit="return false;" class="space-y-4">
-                
-                <!-- Event Title Input Field -->
-                <div>
-                    <label for="pinTitle" class="label-uppercase mb-1">Plan / Event</label>
-                    <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" class="input-field">
-                </div>
+            <!-- Emoji Picker Container -->
+            <div>
+                <label class="label-uppercase mb-1.5">Choose Pin Emoji</label>
+                <div id="emojiPresets" class="grid grid-cols-6 gap-1.5 sm:gap-2"></div>
+            </div>
 
-                <!-- Emoji Picker Container -->
-                <div>
-                    <label class="label-uppercase mb-1.5">Choose Pin Emoji</label>
-                    <div id="emojiPresets" class="grid grid-cols-6 gap-2"></div>
-                </div>
+            <!-- Live Selected Emoji Preview Row -->
+            <div class="flex items-center justify-between pt-1">
+                <span class="text-xs text-slate-400">Selected Pin:</span>
+                <div id="selectedEmojiPreview" class="text-xl sm:text-2xl bg-slate-100 dark:bg-slate-700/60 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-600">📍</div>
+            </div>
 
-                <!-- Live Selected Emoji Preview Row -->
-                <div class="flex items-center justify-between pt-1">
-                    <span class="text-xs text-slate-400">Selected Pin:</span>
-                    <div id="selectedEmojiPreview" class="text-2xl bg-slate-100 dark:bg-slate-700/60 w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-600 transition-transform transform active:scale-110">📍</div>
-                </div>
-
-                <!-- Form Action Buttons -->
-                <div class="flex gap-2 pt-2">
-                    <button id="deletePinBtn" type="button" class="hidden px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                    <button id="savePinBtn" type="submit" class="btn-primary flex-grow py-3.5">
-                        Set It
-                    </button>
-                </div>
-            </form>
-        </div>
+            <!-- Form Action Buttons -->
+            <div class="flex gap-2 pt-2">
+                <button id="deletePinBtn" type="button" class="hidden px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+                <button id="savePinBtn" type="submit" class="btn-primary flex-grow py-3">
+                    Set It
+                </button>
+            </div>
+        </form>
     </div>
+</div>
 </body>
 </html>
