@@ -36,8 +36,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- Application Entry Script (ES Module) -->
-  <script type="module" crossorigin src="/set-calendar-app/assets/index-Dw9AIbjS.js"></script>
-  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-C1gdH2jH.css">
+  <script type="module" crossorigin src="/set-calendar-app/assets/index-DSlBOF6a.js"></script>
+  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-bc9O8A3N.css">
 </head>
 
 <body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col justify-between select-none overflow-x-hidden pb-16 sm:pb-0">
@@ -180,40 +180,37 @@
          4. MODAL OVERLAYS & INTERACTIVE DIALOGS
          =================================================================== -->
 
-    <!-- -------------------------------------------------------------------
-         4.1 DAY DETAIL MODAL
-         Shows itemized list of pinned events for a selected date.
-         ------------------------------------------------------------------- -->
-    <div id="dayDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-        <div id="dayDetailCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform translate-y-full sm:translate-y-0 sm:scale-95 transition-all duration-200 max-h-[85vh] flex flex-col">
-            
-            <!-- Modal Header -->
-            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
-                <div>
-                    <h3 id="dayDetailTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Date Details</h3>
-                    <p class="text-xs text-slate-400 dark:text-slate-500">Scheduled plans & active pins</p>
-                </div>
-                <button id="closeDayDetailBtn" type="button" class="btn-icon hover:rotate-90">
-                    <i class="fa-solid fa-xmark text-sm"></i>
-                </button>
+<!-- -------------------------------------------------------------------
+     4.1 DAY DETAIL MODAL
+     ------------------------------------------------------------------- -->
+<div id="dayDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div id="dayDetailCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-200 max-h-[85vh] flex flex-col justify-between">        
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+            <div>
+                <h3 id="dayDetailTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Date Details</h3>
+                <p class="text-xs text-slate-400 dark:text-slate-500">Scheduled plans & active pins</p>
             </div>
-
-            <!-- Dynamic Pin List Target (Populated via JS) -->
-            <div id="dayPinsList" class="flex-grow overflow-y-auto space-y-2 pr-1 my-2 min-h-[100px]"></div>
-
-            <!-- Action Button: Open Pin Creator -->
-            <button id="addNewPinBtn" type="button" class="btn-primary mt-2">
-                <i class="fa-solid fa-plus text-xs"></i> New Set
+            <button id="closeDayDetailBtn" type="button" class="btn-icon hover:rotate-90">
+                <i class="fa-solid fa-xmark text-sm"></i>
             </button>
         </div>
-    </div>
 
-    <!-- -------------------------------------------------------------------
+        <!-- Dynamic Pin List Target (Populated via JS) -->
+        <div id="dayPinsList" class="flex-grow overflow-y-auto space-y-2 pr-1 my-2 min-h-[100px]"></div>
+
+        <!-- Action Button: Open Pin Creator -->
+        <button id="addNewPinBtn" type="button" class="btn-primary mt-2">
+            <i class="fa-solid fa-plus text-xs"></i> New Set
+        </button>
+    </div>
+</div>
+
+<!-- -------------------------------------------------------------------
      4.2 PIN EDITOR MODAL
      ------------------------------------------------------------------- -->
-<div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-200">
-    <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform translate-y-full sm:translate-y-0 transition-all duration-200 max-h-[90vh] overflow-y-auto flex flex-col justify-between">
-        
+<div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+    <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-200 max-h-[90vh] overflow-y-auto flex flex-col justify-between">        
         <!-- Modal Header -->
         <div class="flex items-center justify-between mb-3">
             <div>
