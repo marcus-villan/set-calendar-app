@@ -1,0 +1,260 @@
+<!-- 
+  =============================================================================
+  AI / DEVELOPER INSTRUCTION MEMO:
+  -----------------------------------------------------------------------------
+  CRITICAL: DO NOT ERASE, REMOVE, OR SHORTEN ANY COMMENTS IN THIS FILE.
+  
+  When extending, refactoring, or updating this code:
+  1. Preserve all section headers, structural markers, and instructional notes.
+  2. Maintain consistent HTML semantic structures (`<main>`, `<header>`, `<footer>`).
+  3. Ensure all element `id` attributes match bindings in JS module entry points.
+  4. Follow standard Tailwind CSS layout patterns established below.
+  =============================================================================
+-->
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <!-- ===================================================================
+         1. META & DOCUMENT CONFIGURATION
+         =================================================================== -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Set — Quick Calendar Pins</title>
+
+    <!-- ===================================================================
+         2. EXTERNAL ASSETS & LIBRARIES
+         =================================================================== -->
+    <!-- FontAwesome Vector Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Application Entry Script (ES Module) -->
+    <script type="module" src="/src/main.js"></script>
+</head>
+
+<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col justify-between select-none overflow-x-hidden">
+
+    <!-- ===================================================================
+         3. MAIN APPLICATION CONTAINER
+         =================================================================== -->
+    <div class="min-h-full flex flex-col max-w-4xl mx-auto w-full px-3 sm:px-6 py-4">
+        
+        <!-- ---------------------------------------------------------------
+             3.1 NAVIGATION TABS BAR
+             Controls primary view switching between Calendar and Settings.
+             --------------------------------------------------------------- -->
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-2xl">
+            <button id="navCalendarBtn" type="button" class="nav-tab nav-tab-active">
+                <i class="fa-solid fa-calendar-days mr-1.5"></i> Calendar
+            </button>
+            <button id="navSettingsBtn" type="button" class="nav-tab nav-tab-inactive">
+                <i class="fa-solid fa-gear mr-1.5"></i> Settings
+            </button>
+        </div>
+            
+            <!-- Quick reset button to skip back to current system date -->
+            <button id="todayBtn" type="button" class="btn-control">
+                Today
+            </button>
+        </div>
+
+        <!-- ---------------------------------------------------------------
+             3.2 GLOBAL APPLICATION HEADER
+             Displays branding logo, application title, and tagline.
+             --------------------------------------------------------------- -->
+        <header class="flex items-center justify-between py-3 mb-4 border-b border-slate-200 dark:border-slate-800">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-2xl w-10 h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform hover:rotate-6">
+                    S
+                </div>
+                <div>
+                    <h1 class="title-main">
+                        set - your new planner
+                    </h1>
+                    <p class="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-1">
+                        Tap. Set. Done.
+                    </p>
+                </div>
+            </div>
+        </header>
+
+        <!-- ---------------------------------------------------------------
+             3.3 MAIN VIEW: CALENDAR INTERFACE
+             Default active view rendering monthly grids and active event chips.
+             --------------------------------------------------------------- -->
+        <main id="calendarView" class="flex-grow flex flex-col justify-between transition-all duration-300">
+            
+            <!-- Month Selection & Controls Header -->
+            <div class="flex items-center justify-between mb-4 px-1">
+                <div class="flex items-center gap-2">
+                    <h2 id="currentMonthYear" class="title-section">
+                        -- ----
+                    </h2>
+                </div>
+                <div class="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-800/60 p-1 rounded-2xl">
+                    <button id="prevMonth" type="button" class="p-2 w-9 h-9 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center active:scale-90">
+                        <i class="fa-solid fa-chevron-left text-xs"></i>
+                    </button>
+                    <button id="nextMonth" type="button" class="p-2 w-9 h-9 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center active:scale-90">
+                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Calendar Grid Frame -->
+            <div class="card-panel flex-grow flex flex-col justify-between transition-all">
+                
+                <!-- Day Name Column Headers -->
+                <div class="grid grid-cols-7 text-center mb-2">
+                    <div class="text-xs font-bold text-red-500 py-1">SUN</div>
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 py-1">MON</div>
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 py-1">TUE</div>
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 py-1">WED</div>
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 py-1">THU</div>
+                    <div class="text-xs font-bold text-slate-400 dark:text-slate-500 py-1">FRI</div>
+                    <div class="text-xs font-bold text-indigo-500 py-1">SAT</div>
+                </div>
+
+                <!-- Dynamic Grid Insertion Target (Populated via JS) -->
+                <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 flex-grow auto-rows-fr min-h-[360px]"></div>
+            </div>
+
+            <!-- Upcoming Events Horizontal Summary Drawer -->
+            <div class="mt-4 bg-white/70 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-3 border border-slate-200/60 dark:border-slate-800 transition-all">
+                <div class="flex items-center justify-between mb-2 px-1">
+                    <span class="label-uppercase">Upcoming Set Pins</span>
+                    <span id="pinCount" class="text-xs font-semibold bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full">0 active</span>
+                </div>
+                <!-- Dynamic Chips Target (Populated via JS) -->
+                <div id="upcomingList" class="flex gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs"></div>
+            </div>
+        </main>
+
+        <!-- ---------------------------------------------------------------
+             3.4 MAIN VIEW: APP SETTINGS INTERFACE
+             Secondary view for managing app configurations and themes.
+             --------------------------------------------------------------- -->
+        <main id="settingsView" class="hidden flex-grow flex flex-col animate-fadeIn">
+            <h2 class="title-section mb-4">
+                App Settings
+            </h2>
+            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg space-y-6">
+                
+                <!-- Dark / Light Appearance Toggle Row -->
+                <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
+                    <div>
+                        <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Appearance Mode</h3>
+                        <p class="text-xs text-slate-400 dark:text-slate-500">Choose your preferred light or dark view</p>
+                    </div>
+                    <button id="settingsThemeToggle" type="button" class="relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full p-1 bg-slate-300 dark:bg-brand-600 transition-colors duration-200 z-10">
+                        <span id="toggleKnob" class="pointer-events-none h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0 dark:translate-x-6"></span>
+                    </button>
+                </div>
+
+                <!-- Application Information Metadata -->
+                <div class="text-xs text-slate-400 dark:text-slate-500 space-y-1">
+                    <p class="font-semibold text-slate-600 dark:text-slate-300">Set Calendar App</p>
+                    <p>Organize daily tasks with simple emoji pins and plans.</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- ---------------------------------------------------------------
+             3.5 GLOBAL FOOTER
+             --------------------------------------------------------------- -->
+        <footer class="mt-4 text-center text-xs text-slate-400 dark:text-slate-600 py-2">
+            Tap any date square to set or expand plans.
+        </footer>
+    </div>
+
+    <!-- ===================================================================
+         4. MODAL OVERLAYS & INTERACTIVE DIALOGS
+         =================================================================== -->
+
+    <!-- -------------------------------------------------------------------
+         4.1 DAY DETAIL MODAL
+         Shows itemized list of pinned events for a selected date.
+         ------------------------------------------------------------------- -->
+    <div id="dayDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div id="dayDetailCard" class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-all duration-200 max-h-[85vh] flex flex-col">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+                <div>
+                    <h3 id="dayDetailTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Date Details</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Scheduled plans & active pins</p>
+                </div>
+                <button id="closeDayDetailBtn" type="button" class="btn-icon hover:rotate-90">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Dynamic Pin List Target (Populated via JS) -->
+            <div id="dayPinsList" class="flex-grow overflow-y-auto space-y-2 pr-1 my-2 min-h-[100px]"></div>
+
+            <!-- Action Button: Open Pin Creator -->
+            <button id="addNewPinBtn" type="button" class="btn-primary mt-2">
+                <i class="fa-solid fa-plus text-xs"></i> New Set
+            </button>
+        </div>
+    </div>
+
+    <!-- -------------------------------------------------------------------
+         4.2 PIN EDITOR MODAL
+         Form interface to create, edit, or delete event pins.
+         ------------------------------------------------------------------- -->
+    <div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 opacity-0 pointer-events-none transition-all duration-200">
+        <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transform translate-y-full sm:translate-y-4 transition-all duration-200">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 id="modalDateTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Set Date</h3>
+                    <p class="text-xs text-slate-400 dark:text-slate-500">Choose an emoji and name your plan</p>
+                </div>
+                <button id="closeModalBtn" type="button" class="btn-icon">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Pin Editor Form -->
+            <form id="pinForm" onsubmit="return false;" class="space-y-4">
+                
+                <!-- Event Title Input Field -->
+                <div>
+                    <label for="pinTitle" class="label-uppercase mb-1">Plan / Event</label>
+                    <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" class="input-field">
+                </div>
+
+                <!-- Emoji Picker Container -->
+                <div>
+                    <label class="label-uppercase mb-1.5">Choose Pin Emoji</label>
+                    <div id="emojiPresets" class="grid grid-cols-6 gap-2"></div>
+                </div>
+
+                <!-- Live Selected Emoji Preview Row -->
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-xs text-slate-400">Selected Pin:</span>
+                    <div id="selectedEmojiPreview" class="text-2xl bg-slate-100 dark:bg-slate-700/60 w-10 h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-600 transition-transform transform active:scale-110">📍</div>
+                </div>
+
+                <!-- Form Action Buttons -->
+                <div class="flex gap-2 pt-2">
+                    <button id="deletePinBtn" type="button" class="hidden px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <button id="savePinBtn" type="submit" class="btn-primary flex-grow py-3.5">
+                        Set It
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
