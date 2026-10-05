@@ -36,6 +36,17 @@ export const View = {
       statBusiestLabel: document.getElementById('statBusiestLabel'),
       statNext: document.getElementById('statNext'),
       statNextLabel: document.getElementById('statNextLabel'),
+      accountText: document.getElementById('accountText'),
+      accountError: document.getElementById('accountError'),
+      accountSignedOut: document.getElementById('accountSignedOut'),
+      accountSignedIn: document.getElementById('accountSignedIn'),
+      googleSignInBtn: document.getElementById('googleSignInBtn'),
+      googleSignInLabel: document.getElementById('googleSignInLabel'),
+      accountAvatar: document.getElementById('accountAvatar'),
+      accountName: document.getElementById('accountName'),
+      accountEmail: document.getElementById('accountEmail'),
+      signOutBtn: document.getElementById('signOutBtn'),
+      accountContext: document.getElementById('accountContext'),
       installBanner: document.getElementById('installBanner'),
       installBtn: document.getElementById('installBtn'),
       installDismissBtn: document.getElementById('installDismissBtn'),
@@ -563,6 +574,32 @@ export const View = {
       e.statNext.textContent = '—';
       e.statNextLabel.textContent = 'Next set';
     }
+  },
+
+  // ---------- Account ----------
+  // person: from describeUser() or null when signed out. error: a short message or ''.
+  renderAccount(person, error = '') {
+    const e = this.elements;
+    e.accountSignedOut.classList.toggle('hidden', !!person);
+    e.accountSignedIn.classList.toggle('hidden', !person);
+    e.accountError.classList.toggle('hidden', !error);
+    e.accountError.textContent = error;
+    e.googleSignInBtn.disabled = false;
+    e.googleSignInLabel.textContent = 'Continue with Google';
+    e.accountText.textContent = person
+      ? 'Signed in. Cloud sync for your sets is coming next.'
+      : 'Sign in to back up your sets and use them on all your devices.';
+    if (person) {
+      e.accountName.textContent = person.name;
+      e.accountEmail.textContent = person.email;
+      e.accountAvatar.classList.toggle('hidden', !person.avatar);
+      if (person.avatar) e.accountAvatar.src = person.avatar;
+    }
+  },
+
+  setSigningIn() {
+    this.elements.googleSignInBtn.disabled = true;
+    this.elements.googleSignInLabel.textContent = 'Opening Google…';
   },
 
   // ---------- Install prompt ----------

@@ -4,6 +4,8 @@ import { View } from './view.js';
 import { dateToStr, lastEmoji, isValidDateStr, shortDate, weekdayDate, groupByRange, nextTimeAfter, formatTime } from './utils.js';
 import { parseBackup, backupFileName, countSets, MAX_BACKUP_BYTES } from './backup.js';
 import { isIOSDevice, isStandalone, installMode, shouldShowBanner } from './install.js';
+import { describeUser, readAuthError, stripAuthParams } from './account.js';
+import { onAuthChange, signInWithGoogle, signOut } from './auth.js';
 
 // iOS Safari ignores user-scalable=no. Its pinch-zoom (and macOS Safari's trackpad pinch) fires
 // non-standard gesture* events, which we can cancel. Double-tap zoom is handled in CSS (touch-action).
@@ -352,6 +354,41 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.hidden) refreshAll();
   });
 
+  // ---------- Account (Google sign-in) ----------
+  let signInError = readAuthError(location.href) ?? ''; // set when Google sends the person back with a problem
+  let currentUser = null;
+
+  const runningAs = () => (isStandalone({ navigatorStandalone: navigator.standalone, displayModeStandalone: window.matchMedia('(display-mode: standalone)').matches })
+    ? 'Home Screen app' : 'browser');
+  View.elements.accountContext.textContent = `Running as: ${runningAs()}`; // SPIKE (see index.html)
+
+  function renderAccount() {
+    View.renderAccount(describeUser(currentUser), signInError);
+  }
+
+  View.elements.googleSignInBtn.addEventListener('click', async () => {
+    signInError = '';
+    View.setSigningIn();
+    const error = await signInWithGoogle(); // on success the browser leaves for Google, so we only get here on failure
+    if (error) { signInError = error.message; renderAccount(); }
+  });
+
+  View.elements.signOutBtn.addEventListener('click', async () => {
+    const error = await signOut();
+    if (error) signInError = error.message;
+    renderAccount();
+  });
+
+  onAuthChange((user) => {
+    currentUser = user;
+    renderAccount();
+  });
+
+  // Coming back from Google lands on "?tab=settings": open Settings, then tidy the address bar.
+  const returningFromSignIn = new URLSearchParams(location.search).get('tab') === 'settings';
+  const startTab = returningFromSignIn || signInError ? 'settings' : 'home';
+  if (startTab === 'settings') history.replaceState(history.state, '', stripAuthParams(location.href));
+
   // ---------- Appearance ----------
   // The inline script in index.html already applied the saved theme before first paint
   // (no flash); here we load the same settings into the model and wire up the controls.
@@ -376,6 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   applyAppearance();
 
-  View.switchTab('home');
+  View.switchTab(startTab);
+  renderAccount();
   refreshAll();
 });
