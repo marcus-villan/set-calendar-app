@@ -7,37 +7,53 @@
    Every color in the app comes from these variables. To try a new visual
    direction, change the values here (and nothing else): the components below
    and the markup only use semantic names like bg-surface / text-muted / bg-accent.
-   Direction: "Forest" — warm off-white / near-black with a dark green accent.
+
+   --primary  = big solid things (main buttons, logo)
+   --accent   = highlights (today, pins, focus, badges)
+
+   Direction: "Mono Ink" — pure black & white, one tomato-red accent.
+   (Forest, the previous direction, is kept in the comment at the bottom of this
+    block: paste its values over the ones below to switch back.)
    ============================================================================= */
 :root {
   color-scheme: light;
-  --bg: #f4f3ee;
-  --surface: #fcfbf8;
-  --surface-2: #ebeae3;
-  --line: #dcdad0;
-  --ink: #151915;
-  --muted: #666b64;
-  --accent: #1d5a3c;
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f0f0f0;
+  --line: #e3e3e3;
+  --ink: #0a0a0a;
+  --muted: #6b6b6b;
+  --primary: #0a0a0a;
+  --primary-ink: #ffffff;
+  --accent: #d93a26;
   --accent-ink: #ffffff;
-  --accent-soft: #dfeae3;
+  --accent-soft: #fdece8;
   --danger: #b3261e;
   --danger-soft: #f6e2e0;
 }
 
 .dark {
   color-scheme: dark;
-  --bg: #0d100e;
-  --surface: #151a17;
-  --surface-2: #1e2420;
-  --line: #2b332e;
-  --ink: #eceee9;
-  --muted: #8e958d;
-  --accent: #62c08d;
-  --accent-ink: #06130b;
-  --accent-soft: #1a2b21;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1f1f1f;
+  --line: #2e2e2e;
+  --ink: #f5f5f5;
+  --muted: #9a9a9a;
+  --primary: #f5f5f5;
+  --primary-ink: #0a0a0a;
+  --accent: #ff6a52;
+  --accent-ink: #1a0603;
+  --accent-soft: #2b1511;
   --danger: #f0857d;
   --danger-soft: #33201f;
 }
+
+/* FOREST (previous direction)
+   light: bg #f4f3ee  surface #fcfbf8  surface-2 #ebeae3  line #dcdad0  ink #151915
+          muted #666b64  primary #1d5a3c  primary-ink #fff  accent #1d5a3c  accent-ink #fff  accent-soft #dfeae3
+   dark:  bg #0d100e  surface #151a17  surface-2 #1e2420  line #2b332e  ink #eceee9
+          muted #8e958d  primary #62c08d  primary-ink #06130b  accent #62c08d  accent-ink #06130b  accent-soft #1a2b21 */
 
 /* `inline` makes utilities reference var(--x) directly, so they re-theme at runtime. */
 @theme inline {
@@ -48,6 +64,8 @@
   --color-line: var(--line);
   --color-ink: var(--ink);
   --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
@@ -96,7 +114,7 @@ textarea {
 @layer components {
   /* ---- Brand ---- */
   .logo-mark {
-    @apply flex h-10 w-10 items-center justify-center rounded-2xl bg-accent text-lg font-extrabold text-accent-ink;
+    @apply flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-lg font-extrabold text-primary-ink;
     transition: transform 0.3s var(--ease-spring);
   }
   .logo-mark:hover {
@@ -117,7 +135,7 @@ textarea {
 
   /* ---- Buttons ---- */
   .btn-primary {
-    @apply flex w-full items-center justify-center gap-2 rounded-2xl bg-accent py-3.5 text-sm font-semibold text-accent-ink transition duration-200 hover:brightness-110 active:scale-[0.97];
+    @apply flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-3.5 text-sm font-semibold text-primary-ink transition duration-200 hover:opacity-90 active:scale-[0.97];
   }
   .btn-danger {
     @apply flex items-center justify-center rounded-2xl bg-danger-soft px-4 py-3 text-sm font-bold text-danger transition duration-200 hover:brightness-95 active:scale-95;
@@ -148,7 +166,7 @@ textarea {
   /* ---- Forms ---- */
   /* 16px on purpose: iOS Safari zooms the page when focusing inputs below 16px. */
   .input-field {
-    @apply w-full rounded-2xl border border-transparent bg-surface-2 px-4 py-3 text-base font-medium text-ink placeholder-muted/70 outline-none transition duration-200 focus:border-accent;
+    @apply w-full rounded-2xl border border-transparent bg-surface-2 px-4 py-3 text-base font-medium text-ink placeholder-muted/70 outline-none transition duration-200 focus:border-ink;
   }
 
   /* ---- Switch (state comes from aria-checked) ---- */
@@ -156,7 +174,7 @@ textarea {
     @apply relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full bg-line p-1 transition-colors duration-200;
   }
   .switch[aria-checked="true"] {
-    @apply bg-accent;
+    @apply bg-primary;
   }
   .switch-knob {
     @apply pointer-events-none h-6 w-6 rounded-full bg-white shadow-md;
@@ -171,7 +189,7 @@ textarea {
     @apply relative flex w-full cursor-pointer select-none flex-col justify-between rounded-xl border border-line/70 bg-surface p-1 text-left transition duration-200 hover:border-accent/50 active:scale-95 sm:rounded-2xl sm:p-2;
   }
   .day-cell--has-pins {
-    @apply border-accent/30 bg-accent-soft;
+    @apply border-ink/25 bg-surface-2;
   }
   .day-cell--outside {
     @apply pointer-events-none cursor-default border-transparent bg-transparent text-muted/40 active:scale-100;
