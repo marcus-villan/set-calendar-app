@@ -1,6 +1,7 @@
 import './style.css';
 import { Model } from './model.js';
 import { View } from './view.js';
+import { dateToStr, lastEmoji } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   Model.init();
@@ -9,6 +10,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // direction: -1 / 1 slides the grid in from that side, 0 re-renders in place.
   function refreshCalendar(direction = 0) {
     View.renderCalendar(Model.currentDate, Model.pins, openDayDetail, direction);
+    refreshUpcoming();
+  }
+
+  function refreshUpcoming() {
+    const today = dateToStr(new Date());
+    View.renderUpcomingList(Model.upcoming(today), today, openPinFromUpcoming);
+  }
+
+  function renderDayList() {
+    View.renderDayPinsList(Model.pins, Model.selectedDateStr, openPinModal, deleteWithUndo);
   }
 
   // Month index lets us pick the slide direction for any jump (prev/next/Today).
@@ -24,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const [y, m, d] = dateStr.split('-').map(Number);
     const dateObj = new Date(y, m - 1, d);
     View.elements.dayDetailTitle.textContent = dateObj.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    View.renderDayPinsList(Model.pins, dateStr, openPinModal);
+    renderDayList();
     View.openModal(View.elements.dayDetailModal);
   }
 
@@ -33,6 +44,18 @@ document.addEventListener('DOMContentLoaded', () => {
     View.closeModal(View.elements.dayDetailModal);
     // The grid was re-rendered while the sheet was open, so re-find the day cell.
     View.focusDay(dateStr);
+  }
+
+  // Selecting an emoji updates the model, the big preview, and which quick-pick is highlighted.
+  // `typed` = it came from the custom input, so we must not overwrite what the user is typing.
+  function setEmoji(emoji, { typed = false } = {}) {
+    Model.selectedEmoji = emoji;
+    View.elements.selectedEmojiPreview.textContent = emoji;
+    if (!typed) {
+      // A quick-pick clears the custom box; a custom emoji (from an existing pin) fills it.
+      View.elements.customEmojiInput.value = Model.emojiOptions.includes(emoji) ? '' : emoji;
+    }
+    View.renderEmojiPresets(Model.emojiOptions, emoji, (picked) => setEmoji(picked));
   }
 
   function openPinModal(pinId = null) {
@@ -46,28 +69,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (existingPin) {
       View.elements.pinTitleInput.value = existingPin.title || '';
-      Model.selectedEmoji = existingPin.emoji || '📍';
+      View.elements.pinNoteInput.value = existingPin.note || '';
       View.elements.deletePinBtn.classList.remove('hidden');
       View.elements.savePinBtn.textContent = 'Update Set';
+      setEmoji(existingPin.emoji || '📍');
     } else {
       View.elements.pinTitleInput.value = '';
-      Model.selectedEmoji = '📍';
+      View.elements.pinNoteInput.value = '';
       View.elements.deletePinBtn.classList.add('hidden');
       View.elements.savePinBtn.textContent = 'Set';
+      setEmoji('📍');
     }
-
-    View.elements.selectedEmojiPreview.textContent = Model.selectedEmoji;
-    View.renderEmojiPresets(Model.emojiOptions, Model.selectedEmoji, function handleEmojiSelect(emoji) {
-      Model.selectedEmoji = emoji;
-      View.elements.selectedEmojiPreview.textContent = emoji;
-      View.renderEmojiPresets(Model.emojiOptions, Model.selectedEmoji, handleEmojiSelect);
-    });
 
     View.openModal(View.elements.pinModal, View.elements.pinTitleInput);
   }
 
+  // Tapping an "Upcoming" chip edits that pin directly, without going through the day sheet.
+  function openPinFromUpcoming(dateStr, pinId) {
+    Model.selectedDateStr = dateStr;
+    openPinModal(pinId);
+  }
+
   function closePinModal() {
     View.closeModal(View.elements.pinModal);
+  }
+
+  // Delete immediately, but keep the pin around for an "Undo" toast so a mis-tap isn't permanent.
+  function deleteWithUndo(pinId) {
+    const dateStr = Model.selectedDateStr;
+    const removed = Model.deletePin(dateStr, pinId);
+    if (!removed) return;
+    renderDayList();
+    refreshCalendar();
+    View.showToast(`Deleted “${removed.pin.title}”`, 'Undo', () => {
+      Model.restorePin(dateStr, removed.pin, removed.index);
+      renderDayList();
+      refreshCalendar();
+    });
   }
 
   // Event Listeners
@@ -101,22 +139,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // Any emoji: whatever the user types or pastes, keep only the newest emoji.
+  // Letters and other characters are dropped, so the box always holds one emoji (or nothing).
+  View.elements.customEmojiInput.addEventListener('input', (e) => {
+    const emoji = lastEmoji(e.target.value);
+    e.target.value = emoji ?? '';
+    if (emoji) setEmoji(emoji, { typed: true });
+  });
+
   // A <form> submit covers both the Set button and the keyboard's Enter / Done key.
   View.elements.pinForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const title = View.elements.pinTitleInput.value.trim();
     if (!title) return;
-    Model.addOrUpdatePin(Model.selectedDateStr, title, Model.selectedEmoji, Model.activePinId);
-    View.renderDayPinsList(Model.pins, Model.selectedDateStr, openPinModal);
+    const note = View.elements.pinNoteInput.value.trim();
+    Model.addOrUpdatePin(Model.selectedDateStr, { title, emoji: Model.selectedEmoji, note }, Model.activePinId);
+    renderDayList();
     refreshCalendar();
     closePinModal();
   });
 
   View.elements.deletePinBtn.addEventListener('click', () => {
     if (Model.activePinId) {
-      Model.deletePin(Model.selectedDateStr, Model.activePinId);
-      View.renderDayPinsList(Model.pins, Model.selectedDateStr, openPinModal);
-      refreshCalendar();
+      deleteWithUndo(Model.activePinId);
       closePinModal();
     }
   });

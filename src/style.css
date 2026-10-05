@@ -28,6 +28,7 @@
   --accent: #d93a26;
   --accent-ink: #ffffff;
   --accent-soft: #fdece8;
+  --accent-on-primary: #ff7a63; /* accent text on a --primary surface (toast) */
   --danger: #b3261e;
   --danger-soft: #f6e2e0;
 }
@@ -45,6 +46,7 @@
   --accent: #ff6a52;
   --accent-ink: #1a0603;
   --accent-soft: #2b1511;
+  --accent-on-primary: #c42e1a;
   --danger: #f0857d;
   --danger-soft: #33201f;
 }
@@ -206,7 +208,7 @@ textarea {
 
   /* ---- Chips & badges ---- */
   .chip {
-    @apply flex items-center gap-1.5 whitespace-nowrap rounded-xl border border-line bg-surface-2 px-2.5 py-1;
+    @apply flex shrink-0 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded-xl border border-line bg-surface-2 px-2.5 py-1.5 transition duration-200 hover:border-ink/40 active:scale-95;
   }
   .badge {
     @apply rounded-full bg-accent-soft px-2 py-0.5 text-[11px] font-semibold text-accent;
@@ -222,7 +224,35 @@ textarea {
 
   /* ---- Pin rows in the day sheet ---- */
   .pin-row {
-    @apply flex items-center justify-between rounded-2xl border border-line bg-bg p-3 transition duration-200 hover:border-accent/60;
+    @apply flex items-center justify-between gap-2 rounded-2xl border border-line bg-bg p-3 transition duration-200 hover:border-ink/30;
+  }
+  .row-action {
+    @apply flex h-9 w-9 items-center justify-center rounded-full text-muted transition duration-200 hover:bg-surface-2 hover:text-ink active:scale-90;
+  }
+  .row-action--danger {
+    @apply hover:bg-danger-soft hover:text-danger;
+  }
+
+  /* ---- Toast: slides down from the top (never covers a sheet's buttons or the keyboard), above modals. Driven by data-open. ---- */
+  .toast {
+    @apply fixed left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-sm items-center justify-between gap-3 rounded-2xl bg-primary py-2.5 pl-4 pr-2 text-sm font-medium text-primary-ink shadow-2xl;
+    top: calc(1rem + env(safe-area-inset-top));
+    transform: translate(-50%, -24px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.35s var(--ease-sheet), opacity 0.2s ease, visibility 0s linear 0.35s;
+  }
+  .toast[data-open="true"] {
+    transform: translate(-50%, 0);
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: transform 0.35s var(--ease-sheet), opacity 0.2s ease, visibility 0s;
+  }
+  .toast-action {
+    @apply shrink-0 rounded-xl px-3 py-1.5 text-sm font-bold underline-offset-2 transition duration-200 hover:underline active:scale-95;
+    color: var(--accent-on-primary);
   }
 
   /* ---- Modals ----

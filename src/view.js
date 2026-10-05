@@ -1,7 +1,7 @@
-import { toDateStr, dateToStr } from './utils.js';
+import { toDateStr, dateToStr, relativeDayLabel } from './utils.js';
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -30,6 +30,11 @@ export const View = {
       pinForm: document.getElementById('pinForm'),
       modalDateTitle: document.getElementById('modalDateTitle'),
       pinTitleInput: document.getElementById('pinTitle'),
+      pinNoteInput: document.getElementById('pinNote'),
+      customEmojiInput: document.getElementById('customEmoji'),
+      toast: document.getElementById('toast'),
+      toastMessage: document.getElementById('toastMessage'),
+      toastAction: document.getElementById('toastAction'),
       emojiPresetsContainer: document.getElementById('emojiPresets'),
       selectedEmojiPreview: document.getElementById('selectedEmojiPreview'),
       closeModalBtn: document.getElementById('closeModalBtn'),
@@ -98,6 +103,8 @@ export const View = {
     const modal = this.topOpenModal();
     if (!modal) return;
     const items = [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+    // The toast lives outside the modal; keep its Undo button keyboard-reachable.
+    if (this.elements.toast.dataset.open === 'true') items.push(this.elements.toastAction);
     if (items.length === 0) return;
     const first = items[0];
     const last = items[items.length - 1];
@@ -149,7 +156,6 @@ export const View = {
       this.elements.calendarGrid.appendChild(this.createDayBox(i, true));
     }
 
-    this.renderUpcomingList(pins);
     this.animateGrid(direction);
   },
 
@@ -217,7 +223,7 @@ export const View = {
     return cell;
   },
 
-  renderDayPinsList(pins, dateStr, onEditPin) {
+  renderDayPinsList(pins, dateStr, onEditPin, onDeletePin) {
     this.elements.dayPinsList.innerHTML = '';
     const dayPins = pins[dateStr] || [];
 
@@ -236,58 +242,112 @@ export const View = {
       item.style.animationDelay = `${i * 40}ms`; // gentle stagger
 
       const content = document.createElement('div');
-      content.className = "flex items-center gap-2.5 overflow-hidden";
+      content.className = "flex min-w-0 items-center gap-2.5";
 
       const emojiSpan = document.createElement('span');
       emojiSpan.className = "text-xl";
       emojiSpan.setAttribute('aria-hidden', 'true');
       emojiSpan.textContent = pin.emoji;
 
-      const titleSpan = document.createElement('span');
+      // Title with the optional note underneath (textContent only: user text is never parsed as HTML)
+      const text = document.createElement('div');
+      text.className = "min-w-0";
+      const titleSpan = document.createElement('p');
       titleSpan.className = "truncate text-sm font-semibold text-ink";
       titleSpan.textContent = pin.title;
+      text.appendChild(titleSpan);
+      if (pin.note) {
+        const noteSpan = document.createElement('p');
+        noteSpan.className = "line-clamp-2 text-xs text-muted";
+        noteSpan.textContent = pin.note;
+        text.appendChild(noteSpan);
+      }
 
       content.appendChild(emojiSpan);
-      content.appendChild(titleSpan);
+      content.appendChild(text);
+
+      const actions = document.createElement('div');
+      actions.className = "flex shrink-0 items-center gap-0.5";
 
       const editBtn = document.createElement('button');
       editBtn.type = 'button';
-      editBtn.className = "p-2 text-muted transition-colors hover:text-accent";
+      editBtn.className = "row-action";
       editBtn.setAttribute('aria-label', `Edit ${pin.title}`);
       editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square text-xs" aria-hidden="true"></i>';
       editBtn.onclick = () => onEditPin(pin.id);
 
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = "row-action row-action--danger";
+      deleteBtn.setAttribute('aria-label', `Delete ${pin.title}`);
+      deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i>';
+      deleteBtn.onclick = () => onDeletePin(pin.id);
+
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
       item.appendChild(content);
-      item.appendChild(editBtn);
+      item.appendChild(actions);
       this.elements.dayPinsList.appendChild(item);
     });
   },
 
-  renderUpcomingList(pins) {
+  // items: [{ dateStr, pin }] from Model.upcoming(). Each chip is a button that opens that pin's editor.
+  renderUpcomingList(items, todayStr, onPinClick) {
     this.elements.upcomingList.innerHTML = '';
-    let totalCount = 0;
-    const sortedDates = Object.keys(pins).sort();
 
-    sortedDates.forEach(date => {
-      pins[date].forEach(pin => {
-        totalCount++;
-        const chip = document.createElement('div');
-        chip.className = "chip";
+    if (items.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = "px-1 py-1.5 text-xs text-muted";
+      empty.textContent = 'Nothing coming up. Tap a day to set something.';
+      this.elements.upcomingList.appendChild(empty);
+    }
 
-        const emoji = document.createElement('span');
-        emoji.textContent = pin.emoji;
+    items.forEach(({ dateStr, pin }) => {
+      const when = relativeDayLabel(dateStr, todayStr);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = "chip";
+      chip.setAttribute('aria-label', `Edit ${pin.title}, ${when}`);
 
-        const title = document.createElement('span');
-        title.className = "font-medium text-ink";
-        title.textContent = pin.title;
+      const emoji = document.createElement('span');
+      emoji.setAttribute('aria-hidden', 'true');
+      emoji.textContent = pin.emoji;
 
-        chip.appendChild(emoji);
-        chip.appendChild(title);
-        this.elements.upcomingList.appendChild(chip);
-      });
+      const title = document.createElement('span');
+      title.className = "font-medium text-ink";
+      title.textContent = pin.title;
+
+      const whenSpan = document.createElement('span');
+      whenSpan.className = "text-muted";
+      whenSpan.textContent = when;
+
+      chip.appendChild(emoji);
+      chip.appendChild(title);
+      chip.appendChild(whenSpan);
+      chip.onclick = () => onPinClick(dateStr, pin.id);
+      this.elements.upcomingList.appendChild(chip);
     });
 
-    this.elements.pinCount.textContent = `${totalCount} active`;
+    this.elements.pinCount.textContent = `${items.length} upcoming`;
+  },
+
+  // ---------- Toast ("Deleted. Undo") ----------
+  showToast(message, actionLabel, onAction, duration = 6000) {
+    const { toast, toastMessage, toastAction } = this.elements;
+    clearTimeout(this.toastTimer);
+    toastMessage.textContent = message;
+    toastAction.textContent = actionLabel;
+    toastAction.onclick = () => {
+      this.hideToast();
+      onAction();
+    };
+    toast.dataset.open = 'true';
+    this.toastTimer = setTimeout(() => this.hideToast(), duration);
+  },
+
+  hideToast() {
+    clearTimeout(this.toastTimer);
+    this.elements.toast.dataset.open = 'false';
   },
 
   renderEmojiPresets(options, currentEmoji, onSelect) {

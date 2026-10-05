@@ -138,7 +138,7 @@
             <div class="card-panel !p-3">
                 <div class="mb-2 flex items-center justify-between px-1">
                     <span class="label-uppercase">Upcoming Set Pins</span>
-                    <span id="pinCount" class="badge">0 active</span>
+                    <span id="pinCount" class="badge">0 upcoming</span>
                 </div>
                 <!-- Dynamic Chips Target (Populated via JS) -->
                 <div id="upcomingList" class="no-scrollbar flex gap-2 overflow-x-auto pb-1 pt-1 text-xs"></div>
@@ -240,16 +240,25 @@
                 <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" autocomplete="off" enterkeyhint="done" class="input-field">
             </div>
 
-            <!-- Emoji Picker Container -->
+            <!-- Optional Note / Description -->
+            <div>
+                <label for="pinNote" class="label-uppercase mb-1">Note <span class="font-medium normal-case tracking-normal">(optional)</span></label>
+                <textarea id="pinNote" rows="2" maxlength="120" placeholder="Where, who, what to bring…" class="input-field resize-none"></textarea>
+            </div>
+
+            <!-- Emoji Picker Container: quick picks + any emoji from the device keyboard -->
             <div>
                 <span id="emojiLabel" class="label-uppercase mb-1.5">Choose Pin Emoji</span>
                 <div id="emojiPresets" class="grid grid-cols-6 gap-2" role="group" aria-labelledby="emojiLabel"></div>
             </div>
 
-            <!-- Live Selected Emoji Preview Row -->
-            <div class="flex items-center justify-between pt-1">
-                <span class="text-xs text-muted">Selected Pin:</span>
-                <div id="selectedEmojiPreview" class="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-2 text-2xl" aria-hidden="true">📍</div>
+            <!-- Live Selected Emoji Preview + custom emoji input -->
+            <div class="flex items-center gap-3 pt-1">
+                <div id="selectedEmojiPreview" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface-2 text-3xl" aria-hidden="true">📍</div>
+                <div class="min-w-0 flex-grow">
+                    <label for="customEmoji" class="label-uppercase mb-1">Or use any emoji</label>
+                    <input type="text" id="customEmoji" autocomplete="off" placeholder="Open your emoji keyboard 😎" class="input-field !py-2.5">
+                </div>
             </div>
 
             <!-- Form Action Buttons -->
@@ -263,6 +272,14 @@
             </div>
         </form>
     </div>
+</div>
+
+<!-- -------------------------------------------------------------------
+     4.3 TOAST (e.g. "Deleted. Undo")
+     ------------------------------------------------------------------- -->
+<div id="toast" class="toast" data-open="false" role="status" aria-live="polite" aria-atomic="true">
+    <span id="toastMessage" class="truncate"></span>
+    <button id="toastAction" type="button" class="toast-action">Undo</button>
 </div>
 </body>
 </html>
