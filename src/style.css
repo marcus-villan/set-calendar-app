@@ -305,6 +305,26 @@ textarea {
     @apply w-full rounded-2xl border border-transparent bg-surface-2 px-4 py-3 text-base font-medium text-ink placeholder-muted/70 outline-none transition duration-200 focus:border-ink;
   }
 
+  /* iOS Safari sizes native date/time inputs to their own content and ignores width:100%, so
+     the time field overflowed its column. Dropping the native appearance makes them obey normal
+     sizing (the picker still opens on tap). An empty appearance:none input also collapses to zero
+     height on iOS, hence the explicit min-height (matches the 48px of the text inputs). */
+  .input-field[type="date"],
+  .input-field[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 3rem;
+    text-align: left;
+  }
+  .input-field[type="date"]::-webkit-date-and-time-value,
+  .input-field[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+  }
+
   /* ---- Theme picker card: carries data-theme itself, so it previews its own palette ---- */
   .theme-card {
     @apply flex flex-col gap-2 rounded-2xl border-2 border-line bg-bg p-3 text-left text-ink transition duration-200 active:scale-95;
