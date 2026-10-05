@@ -1,7 +1,13 @@
 import { toDateStr, dateToStr } from './utils.js';
 
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export const View = {
   elements: {},
+  returnFocus: new Map(),
 
   bindElements() {
     this.elements = {
@@ -16,13 +22,12 @@ export const View = {
       settingsView: document.getElementById('settingsView'),
       settingsThemeToggle: document.getElementById('settingsThemeToggle'),
       dayDetailModal: document.getElementById('dayDetailModal'),
-      dayDetailCard: document.getElementById('dayDetailCard'),
       dayDetailTitle: document.getElementById('dayDetailTitle'),
       dayPinsList: document.getElementById('dayPinsList'),
       closeDayDetailBtn: document.getElementById('closeDayDetailBtn'),
       addNewPinBtn: document.getElementById('addNewPinBtn'),
       pinModal: document.getElementById('pinModal'),
-      modalCard: document.getElementById('modalCard'),
+      pinForm: document.getElementById('pinForm'),
       modalDateTitle: document.getElementById('modalDateTitle'),
       pinTitleInput: document.getElementById('pinTitle'),
       emojiPresetsContainer: document.getElementById('emojiPresets'),
@@ -37,38 +42,95 @@ export const View = {
 
   applyTheme(isDark) {
     document.documentElement.classList.toggle('dark', isDark);
+    this.elements.settingsThemeToggle.setAttribute('aria-checked', String(isDark));
+    // Keep the browser chrome (Safari toolbar tint) matching the page background.
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
   },
 
   switchTab(tabName) {
     const { calendarView, settingsView, navCalendarBtn, navSettingsBtn } = this.elements;
-    const activeClasses = ['bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-xs'];
-    const inactiveClasses = ['bg-transparent', 'text-slate-500', 'hover:text-slate-900', 'dark:hover:text-white', 'shadow-none'];
     const showCalendar = tabName === 'calendar';
 
     calendarView.classList.toggle('hidden', !showCalendar);
     settingsView.classList.toggle('hidden', showCalendar);
-
-    const [on, off] = showCalendar ? [navCalendarBtn, navSettingsBtn] : [navSettingsBtn, navCalendarBtn];
-    on.classList.add(...activeClasses);
-    on.classList.remove(...inactiveClasses);
-    off.classList.remove(...activeClasses);
-    off.classList.add(...inactiveClasses);
+    // The .nav-tab[aria-current="page"] rule in style.css does the visual styling.
+    navCalendarBtn.setAttribute('aria-current', showCalendar ? 'page' : 'false');
+    navSettingsBtn.setAttribute('aria-current', showCalendar ? 'false' : 'page');
   },
 
-  renderCalendar(currentDate, pins, onDateClick) {
+  // ---------- Modals ----------
+  // Open/close just flips data-open; CSS transitions do the animation (both directions).
+
+  openModal(modal, focusEl) {
+    this.returnFocus.set(modal, document.activeElement);
+    modal.dataset.open = 'true';
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.dataset.modalOpen = 'true';
+    // Must run synchronously inside the tap handler, or iOS won't show the keyboard.
+    (focusEl || modal.querySelector(FOCUSABLE))?.focus({ preventScroll: true });
+  },
+
+  closeModal(modal) {
+    if (modal.dataset.open !== 'true') return;
+    modal.dataset.open = 'false';
+    modal.setAttribute('aria-hidden', 'true');
+
+    const stillOpen = this.topOpenModal();
+    if (!stillOpen) delete document.body.dataset.modalOpen;
+
+    // Give focus back to what opened the modal; if that element was re-rendered
+    // (and so is detached), fall back to the modal underneath.
+    const back = this.returnFocus.get(modal);
+    this.returnFocus.delete(modal);
+    if (back?.isConnected) back.focus({ preventScroll: true });
+    else stillOpen?.querySelector(FOCUSABLE)?.focus({ preventScroll: true });
+  },
+
+  // Later in the DOM = higher z-index, so the last open one is on top.
+  topOpenModal() {
+    const open = document.querySelectorAll('.modal[data-open="true"]');
+    return open[open.length - 1] || null;
+  },
+
+  // Keep Tab / Shift+Tab inside the open modal.
+  trapFocus(e) {
+    const modal = this.topOpenModal();
+    if (!modal) return;
+    const items = [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
+    if (items.length === 0) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    } else if (!modal.contains(document.activeElement)) {
+      e.preventDefault();
+      first.focus();
+    }
+  },
+
+  focusDay(dateStr) {
+    this.elements.calendarGrid.querySelector(`[data-date="${dateStr}"]`)?.focus({ preventScroll: true });
+  },
+
+  // ---------- Calendar ----------
+
+  // direction: -1 (went back), 1 (went forward), 0 (no slide, e.g. after saving a pin)
+  renderCalendar(currentDate, pins, onDateClick, direction = 0) {
     this.elements.calendarGrid.innerHTML = '';
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    this.elements.currentMonthYear.textContent = `${monthNames[month]} ${year}`;
+    this.elements.currentMonthYear.textContent = `${MONTH_NAMES[month]} ${year}`;
 
     const firstDayIndex = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const prevMonthDays = new Date(year, month, 0).getDate();
-
-    const today = new Date();
-    const todayStr = dateToStr(today);
+    const todayStr = dateToStr(new Date());
 
     for (let i = firstDayIndex - 1; i >= 0; i--) {
       this.elements.calendarGrid.appendChild(this.createDayBox(prevMonthDays - i, true));
@@ -88,50 +150,71 @@ export const View = {
     }
 
     this.renderUpcomingList(pins);
+    this.animateGrid(direction);
+  },
+
+  // Slide the new month in from the side we navigated towards.
+  animateGrid(direction) {
+    if (!direction || prefersReducedMotion()) return;
+    this.elements.calendarGrid.animate(
+      [
+        { opacity: 0, transform: `translateX(${direction * 28}px)` },
+        { opacity: 1, transform: 'none' }
+      ],
+      { duration: 300, easing: 'cubic-bezier(0.32, 0.72, 0, 1)' }
+    );
   },
 
   createDayBox(dayNum, isDisabled, isToday = false, dateStr = null, dayPins = [], onDateClick) {
-    const btn = document.createElement('div');
-    let baseClasses = "relative rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 transition-all duration-200 ease-out flex flex-col justify-between cursor-pointer border select-none min-h-[52px] sm:min-h-[70px] active:scale-95 animate-fadeIn ";
-    
+    // Real <button>s so days are reachable and operable by keyboard / screen reader.
+    const cell = document.createElement(isDisabled ? 'div' : 'button');
+    cell.className = 'day-cell';
+
     if (isDisabled) {
-      baseClasses += "bg-slate-100/40 dark:bg-slate-900/20 border-transparent text-slate-300 dark:text-slate-700 pointer-events-none active:scale-100";
-    } else if (dayPins.length > 0) {
-      baseClasses += "bg-brand-50/80 dark:bg-slate-700/80 border-brand-200 dark:border-brand-500/40 shadow-xs hover:border-brand-400 hover:shadow-md";
+      cell.classList.add('day-cell--outside');
+      cell.setAttribute('aria-hidden', 'true');
     } else {
-      baseClasses += "bg-slate-50/60 dark:bg-slate-900/40 border-slate-200/50 dark:border-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/50 hover:border-slate-300";
+      cell.type = 'button';
+      cell.dataset.date = dateStr;
+      if (dayPins.length > 0) cell.classList.add('day-cell--has-pins');
+      if (isToday) cell.setAttribute('aria-current', 'date');
+
+      const [y, m, d] = dateStr.split('-').map(Number);
+      let label = new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+      if (dayPins.length > 0) label += `, ${dayPins.length} ${dayPins.length === 1 ? 'plan' : 'plans'}: ${dayPins.map(p => p.title).join(', ')}`;
+      cell.setAttribute('aria-label', label);
+      cell.onclick = () => onDateClick(dateStr);
     }
 
-    btn.className = baseClasses;
-    if (!isDisabled && dateStr) btn.onclick = () => onDateClick(dateStr);
-
-    const dayHeader = document.createElement('div');
-    dayHeader.className = "flex items-center justify-between w-full";
     const numSpan = document.createElement('span');
-    numSpan.className = `text-xs sm:text-sm font-bold ${isToday ? 'bg-brand-600 text-white px-2 py-0.5 rounded-full shadow-sm' : 'text-slate-700 dark:text-slate-300'}`;
+    numSpan.className = `day-num ${isToday ? 'day-num--today' : ''}`;
     numSpan.textContent = dayNum;
-    dayHeader.appendChild(numSpan);
-    btn.appendChild(dayHeader);
+    cell.appendChild(numSpan);
 
     if (dayPins.length > 0 && !isDisabled) {
       const pinContainer = document.createElement('div');
-      pinContainer.className = "mt-1 flex flex-wrap gap-1 items-center justify-start overflow-hidden max-h-[32px]";
-      dayPins.slice(0, 3).forEach(pin => {
+      pinContainer.className = "mt-1 flex items-center justify-start gap-0.5 overflow-hidden whitespace-nowrap sm:gap-1";
+      pinContainer.setAttribute('aria-hidden', 'true');
+      // Cells are narrow on phones: fit 2 slots there, 3 on wider screens. When pins
+      // overflow, the last slot becomes a "+N" badge so nothing is silently clipped.
+      const slots = window.matchMedia('(min-width: 640px)').matches ? 3 : 2;
+      const shown = dayPins.length > slots ? slots - 1 : dayPins.length;
+      dayPins.slice(0, shown).forEach(pin => {
         const emojiSpan = document.createElement('span');
-        emojiSpan.className = "text-xs sm:text-sm transition-transform hover:scale-125 inline-block";
+        emojiSpan.className = "inline-block text-xs sm:text-sm";
         emojiSpan.textContent = pin.emoji || '📍';
         pinContainer.appendChild(emojiSpan);
       });
-      if (dayPins.length > 3) {
+      if (dayPins.length > shown) {
         const moreSpan = document.createElement('span');
-        moreSpan.className = "text-[9px] font-bold text-brand-600 dark:text-brand-400 bg-brand-100 dark:bg-brand-900/60 px-1 rounded-full";
-        moreSpan.textContent = `+${dayPins.length - 3}`;
+        moreSpan.className = "text-[10px] font-bold leading-none text-accent";
+        moreSpan.textContent = `+${dayPins.length - shown}`;
         pinContainer.appendChild(moreSpan);
       }
-      btn.appendChild(pinContainer);
+      cell.appendChild(pinContainer);
     }
 
-    return btn;
+    return cell;
   },
 
   renderDayPinsList(pins, dateStr, onEditPin) {
@@ -140,34 +223,38 @@ export const View = {
 
     if (dayPins.length === 0) {
       this.elements.dayPinsList.innerHTML = `
-        <div class="text-center py-6 text-slate-400 dark:text-slate-500">
-          <i class="fa-regular fa-calendar-xmark text-2xl mb-2"></i>
+        <div class="py-6 text-center text-muted">
+          <i class="fa-regular fa-calendar-xmark mb-2 text-2xl" aria-hidden="true"></i>
           <p class="text-xs">No plans pinned for this day yet.</p>
         </div>`;
       return;
     }
 
-    dayPins.forEach(pin => {
+    dayPins.forEach((pin, i) => {
       const item = document.createElement('div');
-      item.className = "flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 hover:border-brand-500 transition-all animate-slideUp";
-      
+      item.className = "pin-row animate-slideUp";
+      item.style.animationDelay = `${i * 40}ms`; // gentle stagger
+
       const content = document.createElement('div');
       content.className = "flex items-center gap-2.5 overflow-hidden";
-      
+
       const emojiSpan = document.createElement('span');
       emojiSpan.className = "text-xl";
+      emojiSpan.setAttribute('aria-hidden', 'true');
       emojiSpan.textContent = pin.emoji;
-      
+
       const titleSpan = document.createElement('span');
-      titleSpan.className = "font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate";
+      titleSpan.className = "truncate text-sm font-semibold text-ink";
       titleSpan.textContent = pin.title;
-      
+
       content.appendChild(emojiSpan);
       content.appendChild(titleSpan);
 
       const editBtn = document.createElement('button');
-      editBtn.className = "text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 p-1.5 transition-colors";
-      editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square text-xs"></i>';
+      editBtn.type = 'button';
+      editBtn.className = "p-2 text-muted transition-colors hover:text-accent";
+      editBtn.setAttribute('aria-label', `Edit ${pin.title}`);
+      editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square text-xs" aria-hidden="true"></i>';
       editBtn.onclick = () => onEditPin(pin.id);
 
       item.appendChild(content);
@@ -185,13 +272,13 @@ export const View = {
       pins[date].forEach(pin => {
         totalCount++;
         const chip = document.createElement('div');
-        chip.className = "flex items-center gap-1.5 bg-slate-100 dark:bg-slate-700/50 px-2.5 py-1 rounded-xl whitespace-nowrap border border-slate-200/50 dark:border-slate-600/40";
-        
+        chip.className = "chip";
+
         const emoji = document.createElement('span');
         emoji.textContent = pin.emoji;
-        
+
         const title = document.createElement('span');
-        title.className = "font-medium text-slate-700 dark:text-slate-200";
+        title.className = "font-medium text-ink";
         title.textContent = pin.title;
 
         chip.appendChild(emoji);
@@ -208,7 +295,10 @@ export const View = {
     options.forEach(emoji => {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = `p-2 text-xl rounded-xl transition-transform hover:scale-110 flex items-center justify-center ${emoji === currentEmoji ? 'bg-brand-100 dark:bg-brand-900/60 ring-2 ring-brand-500' : 'bg-slate-100 dark:bg-slate-900/50'}`;
+      const active = emoji === currentEmoji;
+      btn.className = `emoji-btn ${active ? 'emoji-btn--active animate-pop' : ''}`;
+      btn.setAttribute('aria-pressed', String(active));
+      btn.setAttribute('aria-label', `Pin emoji ${emoji}`);
       btn.textContent = emoji;
       btn.onclick = () => onSelect(emoji);
       this.elements.emojiPresetsContainer.appendChild(btn);
