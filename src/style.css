@@ -2,6 +2,10 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* "desk" = a mouse-and-keyboard device. We switch layouts on INPUT TYPE, never on window
+   width: width changes with browser zoom, which made the UI reflow and stretch. */
+@custom-variant desk (@media (hover: hover) and (pointer: fine));
+
 /* =============================================================================
    DESIGN TOKENS
    Every color in the app comes from these variables. To try a new visual
@@ -90,6 +94,13 @@
 
 html {
   background-color: var(--bg); /* matches iOS rubber-band overscroll */
+  /* Fixed UI: no pinch-zoom or double-tap-zoom (panning/scrolling still works).
+     iOS Safari ignores user-scalable=no, but it does honor touch-action. main.js also
+     cancels iOS's gesture* events. */
+  touch-action: pan-x pan-y;
+  /* Stop iOS from auto-enlarging text when the phone rotates. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -129,7 +140,7 @@ textarea {
     @apply -mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-muted;
   }
   .title-section {
-    @apply text-xl font-bold tracking-tight text-ink sm:text-2xl;
+    @apply text-xl font-bold tracking-tight text-ink;
   }
   .label-uppercase {
     @apply block text-xs font-bold uppercase tracking-wider text-muted;
@@ -162,7 +173,7 @@ textarea {
 
   /* ---- Surfaces ---- */
   .card-panel {
-    @apply rounded-3xl border border-line bg-surface p-2.5 sm:p-4;
+    @apply rounded-3xl border border-line bg-surface p-3;
   }
 
   /* ---- Forms ---- */
@@ -188,7 +199,7 @@ textarea {
 
   /* ---- Calendar day cells ---- */
   .day-cell {
-    @apply relative flex w-full cursor-pointer select-none flex-col justify-between rounded-xl border border-line/70 bg-surface p-1 text-left transition duration-200 hover:border-accent/50 active:scale-95 sm:rounded-2xl sm:p-2;
+    @apply relative flex w-full cursor-pointer select-none flex-col justify-between rounded-xl border border-line/70 bg-surface p-1 text-left transition duration-200 hover:border-accent/50 active:scale-95;
   }
   .day-cell--has-pins {
     @apply border-ink/25 bg-surface-2;
@@ -197,7 +208,7 @@ textarea {
     @apply pointer-events-none cursor-default border-transparent bg-transparent text-muted/40 active:scale-100;
   }
   .day-num {
-    @apply inline-flex h-6 min-w-6 items-center justify-center self-start px-1 text-xs font-bold text-ink sm:text-sm;
+    @apply inline-flex h-6 min-w-6 items-center justify-center self-start px-1 text-sm font-bold text-ink;
   }
   .day-cell--outside .day-num {
     @apply text-muted/40;
@@ -276,15 +287,15 @@ textarea {
 
   /* Day sheet: bottom sheet on phones, centered card from sm up. */
   .modal--sheet {
-    @apply items-end sm:items-center sm:p-4;
+    @apply items-end desk:items-center desk:p-4;
   }
   /* Pin editor: floats near the top on phones so the iOS keyboard never covers it. */
   .modal--float {
-    @apply z-50 items-start p-4 pt-[10dvh] sm:items-center sm:pt-4;
+    @apply z-50 items-start p-4 pt-[10dvh] desk:items-center desk:pt-4;
   }
 
   .modal-card {
-    @apply flex w-full flex-col border border-line bg-surface p-5 shadow-2xl sm:max-w-md sm:p-6;
+    @apply flex w-full max-w-md flex-col border border-line bg-surface p-5 shadow-2xl;
     max-height: 85dvh;
     overflow-y: auto;
     overscroll-behavior: contain;
@@ -292,7 +303,7 @@ textarea {
     transition: transform 0.4s var(--ease-sheet), opacity 0.25s ease;
   }
   .modal--sheet .modal-card {
-    @apply rounded-t-3xl sm:rounded-3xl;
+    @apply rounded-t-3xl desk:rounded-3xl;
     padding-bottom: calc(1.25rem + env(safe-area-inset-bottom));
     transform: translateY(100%);
   }
@@ -301,7 +312,7 @@ textarea {
     transform: translateY(16px) scale(0.96);
     opacity: 0;
   }
-  @media (min-width: 640px) {
+  @media (hover: hover) and (pointer: fine) {
     .modal--sheet .modal-card {
       transform: translateY(16px) scale(0.96);
       opacity: 0;

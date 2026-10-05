@@ -199,15 +199,15 @@ export const View = {
 
     if (dayPins.length > 0 && !isDisabled) {
       const pinContainer = document.createElement('div');
-      pinContainer.className = "mt-1 flex items-center justify-start gap-0.5 overflow-hidden whitespace-nowrap sm:gap-1";
+      pinContainer.className = "mt-1 flex items-center justify-start gap-0.5 overflow-hidden whitespace-nowrap";
       pinContainer.setAttribute('aria-hidden', 'true');
-      // Cells are narrow on phones: fit 2 slots there, 3 on wider screens. When pins
-      // overflow, the last slot becomes a "+N" badge so nothing is silently clipped.
-      const slots = window.matchMedia('(min-width: 640px)').matches ? 3 : 2;
+      // A constant 2 slots (fits the narrowest phone cell), independent of window size or zoom.
+      // When pins overflow, the last slot becomes a "+N" badge so nothing is silently clipped.
+      const slots = 2;
       const shown = dayPins.length > slots ? slots - 1 : dayPins.length;
       dayPins.slice(0, shown).forEach(pin => {
         const emojiSpan = document.createElement('span');
-        emojiSpan.className = "inline-block text-xs sm:text-sm";
+        emojiSpan.className = "inline-block text-[13px] leading-none";
         emojiSpan.textContent = pin.emoji || '📍';
         pinContainer.appendChild(emojiSpan);
       });

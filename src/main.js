@@ -3,6 +3,12 @@ import { Model } from './model.js';
 import { View } from './view.js';
 import { dateToStr, lastEmoji } from './utils.js';
 
+// iOS Safari ignores user-scalable=no. Its pinch-zoom (and macOS Safari's trackpad pinch) fires
+// non-standard gesture* events, which we can cancel. Double-tap zoom is handled in CSS (touch-action).
+['gesturestart', 'gesturechange', 'gestureend'].forEach((type) => {
+  document.addEventListener(type, (e) => e.preventDefault(), { passive: false });
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   Model.init();
   View.bindElements();
