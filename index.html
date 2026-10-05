@@ -1,9 +1,9 @@
-<!-- 
+<!--
   =============================================================================
   AI / DEVELOPER INSTRUCTION MEMO:
   -----------------------------------------------------------------------------
   CRITICAL: DO NOT ERASE, REMOVE, OR SHORTEN ANY COMMENTS IN THIS FILE.
-  
+
   When extending, refactoring, or updating this code:
   1. Preserve all section headers, structural markers, and instructional notes.
   2. Maintain consistent HTML semantic structures (`<main>`, `<header>`, `<footer>`).
@@ -19,123 +19,229 @@
          1. META & DOCUMENT CONFIGURATION
          =================================================================== -->
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- viewport-fit=cover makes env(safe-area-inset-*) report real values on iPhone.
+         The UI is fixed: pinch-zoom is blocked here (Android/Chrome) and in main.js + style.css
+         (iOS Safari ignores user-scalable=no). Trade-off: low-vision users can't pinch-zoom the page.
+         Inputs are 16px so iOS doesn't auto-zoom on focus either. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Kept in sync with the page background by View.applyAppearance() -->
+    <meta name="theme-color" content="#fafafa">
+    <meta name="color-scheme" content="light dark">
     <title>Set — Quick Calendar Pins</title>
+    <meta name="description" content="Set is a fast, minimal calendar for quick plans: tap a day, pin an emoji and a note, done. Works great on your phone.">
+    <meta name="application-name" content="Set">
+    <meta name="apple-mobile-web-app-title" content="Set">
+    <!-- Stop iOS from turning dates / numbers in pin titles into phone-number links -->
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="https://marcus-villan.github.io/set-calendar-app/">
+
+    <!-- Icons: .ico for old browsers and crawlers, SVG for modern tabs, PNG for iOS / installs -->
+    <link rel="icon" href="/set-calendar-app/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/set-calendar-app/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/set-calendar-app/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/set-calendar-app/manifest.webmanifest">
+
+    <!-- Link previews (iMessage, WhatsApp, Slack, Facebook, ...) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Set">
+    <meta property="og:title" content="Set — Quick Calendar Pins">
+    <meta property="og:description" content="Tap a day, pin an emoji and a note, done. A fast, minimal calendar for quick plans.">
+    <meta property="og:url" content="https://marcus-villan.github.io/set-calendar-app/">
+    <meta property="og:image" content="https://marcus-villan.github.io/set-calendar-app/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Set: a black and white calendar app. Tap. Set. Done.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Set — Quick Calendar Pins">
+    <meta name="twitter:description" content="Tap a day, pin an emoji and a note, done.">
+    <meta name="twitter:image" content="https://marcus-villan.github.io/set-calendar-app/og-image.png">
+
+    <!-- Theme bootstrap: runs before first paint so nobody sees a flash of the wrong theme.
+         Mirrors View.applyAppearance(). Must stay a plain inline script (not the module below). -->
+    <script>
+      (function () {
+        try {
+          var mode = localStorage.getItem('theme');       // 'system' | 'light' | 'dark'
+          var palette = localStorage.getItem('palette');  // a theme id
+          var dark = mode === 'dark' || (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.classList.toggle('dark', dark);
+          if (palette && /^[a-z]+$/.test(palette)) root.setAttribute('data-theme', palette);
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- ===================================================================
          2. EXTERNAL ASSETS & LIBRARIES
          =================================================================== -->
     <!-- FontAwesome Vector Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Application Entry Script (ES Module) -->
-  <script type="module" crossorigin src="/set-calendar-app/assets/index-DSlBOF6a.js"></script>
-  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-bc9O8A3N.css">
+    <!-- Application Entry Script (ES Module) -->
+  <script type="module" crossorigin src="/set-calendar-app/assets/index-CY65AFvn.js"></script>
+  <link rel="stylesheet" crossorigin href="/set-calendar-app/assets/index-BIKwEK1V.css">
 </head>
 
-<body class="h-full bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 transition-colors duration-300 flex flex-col justify-between select-none overflow-x-hidden pb-16 sm:pb-0">
+<body class="min-h-dvh select-none overflow-x-hidden">
+    <noscript><p style="padding:1rem;font:14px system-ui">Set needs JavaScript to run. Please enable it and reload.</p></noscript>
 
     <!-- ===================================================================
          3. MAIN APPLICATION CONTAINER
          =================================================================== -->
-    <div class="min-h-full flex flex-col max-w-4xl mx-auto w-full px-3 sm:px-6 py-4">
-        
-        <!-- ---------------------------------------------------------------
-             3.1 NAVIGATION TABS BAR
-             Controls primary view switching between Calendar and Settings.
-             --------------------------------------------------------------- -->
-        <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-1 rounded-2xl">
-                <button id="navCalendarBtn" type="button" class="nav-tab nav-tab-active">
-                    <i class="fa-solid fa-calendar-days mr-1.5"></i> Calendar
-                </button>
-                <button id="navSettingsBtn" type="button" class="nav-tab nav-tab-inactive">
-                    <i class="fa-solid fa-gear mr-1.5"></i> Settings
-                </button>
-            </div>
-            
-            <!-- Quick reset button to skip back to current system date -->
-            <button id="todayBtn" type="button" class="btn-control">
-                Today
-            </button>
-        </div>
+    <!-- Fixed-width app column: identical at any window size or browser zoom level. -->
+    <div class="mx-auto flex min-h-dvh w-full max-w-[28rem] flex-col px-3 pb-28 pt-4">
 
         <!-- ---------------------------------------------------------------
-             3.2 GLOBAL APPLICATION HEADER
+             3.1 GLOBAL APPLICATION HEADER
              Displays branding logo, application title, and tagline.
              --------------------------------------------------------------- -->
-        <header class="flex items-center justify-between py-2 sm:py-3 mb-3 sm:mb-4 border-b border-slate-200 dark:border-slate-800">
-            <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="bg-gradient-to-tr from-brand-600 to-indigo-600 text-white font-black text-xl sm:text-2xl w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/30 transition-transform hover:rotate-6">
-                    S
+        <header class="mb-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- Same pin as the app icon (public/favicon.svg), colored from the theme -->
+                <div class="logo-mark" aria-hidden="true">
+                    <svg viewBox="0 0 64 64" class="h-full w-full"><path class="logo-pin" fill-rule="evenodd" d="M32 54C32 54 17 38 17 26A15 15 0 1 1 47 26C47 38 32 54 32 54ZM38 26A6 6 0 1 0 26 26A6 6 0 1 0 38 26Z"/></svg>
                 </div>
                 <div>
-                    <h1 class="title-main">
-                        set - your new planner
-                    </h1>
-                    <p class="text-[10px] sm:text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-widest -mt-0.5 sm:-mt-1">
-                        Tap. Set. Done.
-                    </p>
+                    <h1 class="title-main">set</h1>
+                    <p class="tagline">Tap. Set. Done.</p>
                 </div>
             </div>
+            <!-- Quick reset button to skip back to current system date -->
+            <button id="todayBtn" type="button" class="btn-control hidden">Today</button>
         </header>
+
+        <!-- ---------------------------------------------------------------
+             3.2 NAVIGATION TABS BAR
+             Controls primary view switching between Calendar and Settings.
+             Active tab is styled from aria-current (set by View.switchTab).
+             --------------------------------------------------------------- -->
+        <nav class="mb-4" aria-label="Primary">
+            <div class="nav-seg">
+                <button id="navHomeBtn" type="button" class="nav-tab" aria-current="page">
+                    <i class="fa-solid fa-house mr-1.5" aria-hidden="true"></i> Home
+                </button>
+                <button id="navCalendarBtn" type="button" class="nav-tab" aria-current="false">
+                    <i class="fa-solid fa-calendar-days mr-1.5" aria-hidden="true"></i> Calendar
+                </button>
+                <button id="navSettingsBtn" type="button" class="nav-tab" aria-current="false">
+                    <i class="fa-solid fa-gear mr-1.5" aria-hidden="true"></i> Settings
+                </button>
+            </div>
+        </nav>
 
         <!-- ---------------------------------------------------------------
              3.3 MAIN VIEW: CALENDAR INTERFACE
              Default active view rendering monthly grids and active event chips.
              --------------------------------------------------------------- -->
-        <main id="calendarView" class="flex-grow flex flex-col justify-between transition-all duration-300">
-            
-            <!-- Month Selection & Controls Header -->
-            <div class="flex items-center justify-between mb-3 px-1">
-                <div class="flex items-center gap-2">
-                    <h2 id="currentMonthYear" class="title-section">
-                        -- ----
-                    </h2>
-                </div>
-                <div class="flex items-center gap-1 bg-slate-200/60 dark:bg-slate-800/60 p-1 rounded-2xl">
-                    <button id="prevMonth" type="button" class="p-2 w-9 h-9 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center active:scale-90">
-                        <i class="fa-solid fa-chevron-left text-xs"></i>
+        <main id="homeView" class="animate-view flex flex-grow flex-col gap-3">
+
+            <!-- "Add to Home Screen" nudge. Shown by View.renderInstall() only when it can really help. -->
+            <section id="installBanner" class="card-panel hidden !p-3" aria-label="Add Set to your Home Screen">
+                <div class="flex items-center gap-3">
+                    <img src="/set-calendar-app/icons/apple-touch-icon.png" alt="" width="44" height="44" class="h-11 w-11 shrink-0 rounded-xl">
+                    <div class="min-w-0 flex-grow">
+                        <p class="text-sm font-bold text-ink">Add Set to your Home Screen</p>
+                        <p class="text-xs text-muted">Opens full-screen, one tap away.</p>
+                    </div>
+                    <button id="installDismissBtn" type="button" class="row-action shrink-0 self-start" aria-label="Dismiss">
+                        <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
                     </button>
-                    <button id="nextMonth" type="button" class="p-2 w-9 h-9 rounded-xl hover:bg-white dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center justify-center active:scale-90">
-                        <i class="fa-solid fa-chevron-right text-xs"></i>
+                </div>
+                <button id="installBtn" type="button" class="btn-solid mt-3 w-full !py-2.5">Install</button>
+            </section>
+
+            <!-- Today: what is on right now, with one-tap add -->
+            <section class="card-panel !p-4" aria-labelledby="todayHeading">
+                <p class="label-uppercase">Today</p>
+                <h2 id="todayHeading" class="title-section mt-0.5">&nbsp;</h2>
+                <p id="todaySummary" class="mt-0.5 text-sm text-muted"></p>
+                <div id="todayList" class="mt-3 space-y-2"></div>
+                <button id="todayAddBtn" type="button" class="btn-primary mt-3">
+                    <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i> Add for today
+                </button>
+            </section>
+
+            <!-- Search across every set (title, note, emoji) -->
+            <div class="relative">
+                <label for="searchInput" class="sr-only">Search your sets</label>
+                <input id="searchInput" type="search" placeholder="Search your sets" autocomplete="off" enterkeyhint="search" class="input-field !pl-10">
+                <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
+            </div>
+
+            <!-- Next up (grouped), or search results while a search is active -->
+            <section class="card-panel !p-4" aria-labelledby="nextUpTitle">
+                <div class="mb-3 flex items-center justify-between">
+                    <h2 id="nextUpTitle" class="label-uppercase">Next up</h2>
+                    <span id="nextUpCount" class="badge">0</span>
+                </div>
+                <div id="nextUpList" class="space-y-4"></div>
+            </section>
+
+            <!-- Month at a glance -->
+            <section class="card-panel !p-4" aria-labelledby="statsTitle">
+                <h2 id="statsTitle" class="label-uppercase mb-3">This month</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="stat-tile"><p id="statTotal" class="stat-value">0</p><p class="stat-label">Sets this month</p></div>
+                    <div class="stat-tile"><p id="statDays" class="stat-value">0</p><p class="stat-label">Days planned</p></div>
+                    <div class="stat-tile"><p id="statBusiest" class="stat-value">&mdash;</p><p id="statBusiestLabel" class="stat-label">Busiest day</p></div>
+                    <div class="stat-tile"><p id="statNext" class="stat-value">&mdash;</p><p id="statNextLabel" class="stat-label">Next set</p></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ---------------------------------------------------------------
+             3.3b MAIN VIEW: CALENDAR (month grid)
+             --------------------------------------------------------------- -->
+        <main id="calendarView" class="animate-view hidden flex flex-grow flex-col gap-3">
+
+            <!-- Month Selection & Controls Header -->
+            <div class="flex items-center justify-between px-1">
+                <h2 id="currentMonthYear" class="title-section" aria-live="polite">
+                    -- ----
+                </h2>
+                <div class="flex items-center gap-1 rounded-2xl bg-surface-2 p-1">
+                    <button id="prevMonth" type="button" aria-label="Previous month" class="flex h-9 w-9 items-center justify-center rounded-xl text-muted transition duration-200 hover:bg-surface hover:text-ink active:scale-90">
+                        <i class="fa-solid fa-chevron-left text-xs" aria-hidden="true"></i>
+                    </button>
+                    <button id="nextMonth" type="button" aria-label="Next month" class="flex h-9 w-9 items-center justify-center rounded-xl text-muted transition duration-200 hover:bg-surface hover:text-ink active:scale-90">
+                        <i class="fa-solid fa-chevron-right text-xs" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
 
             <!-- Calendar Grid Frame -->
-            <div class="card-panel flex-grow flex flex-col justify-between transition-all">
-                
+            <div class="card-panel flex flex-grow flex-col !p-2">
+
                 <!-- Day Name Column Headers -->
-                <div class="grid grid-cols-7 text-center mb-2">
-                    <div class="text-[10px] sm:text-xs font-bold text-red-500 py-1">SUN</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 py-1">MON</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 py-1">TUE</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 py-1">WED</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 py-1">THU</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-slate-400 dark:text-slate-500 py-1">FRI</div>
-                    <div class="text-[10px] sm:text-xs font-bold text-indigo-500 py-1">SAT</div>
+                <div class="mb-2 grid grid-cols-7 text-center" aria-hidden="true">
+                    <div class="py-1 text-[11px] font-bold text-muted">SUN</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">MON</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">TUE</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">WED</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">THU</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">FRI</div>
+                    <div class="py-1 text-[11px] font-bold text-muted">SAT</div>
                 </div>
 
                 <!-- Dynamic Grid Insertion Target (Populated via JS) -->
-                <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-2 flex-grow auto-rows-fr min-h-[320px] sm:min-h-[360px]"></div>
+                <div id="calendarGrid" class="grid auto-rows-[4.75rem] grid-cols-7 gap-1"></div>
             </div>
 
             <!-- Upcoming Events Horizontal Summary Drawer -->
-            <div class="mt-3 sm:mt-4 bg-white/70 dark:bg-slate-800/50 backdrop-blur-sm rounded-2xl p-3 border border-slate-200/60 dark:border-slate-800 transition-all">
-                <div class="flex items-center justify-between mb-2 px-1">
+            <div class="card-panel !p-3">
+                <div class="mb-2 flex items-center justify-between px-1">
                     <span class="label-uppercase">Upcoming Set Pins</span>
-                    <span id="pinCount" class="text-[10px] sm:text-xs font-semibold bg-brand-100 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-full">0 active</span>
+                    <span id="pinCount" class="badge">0 upcoming</span>
                 </div>
                 <!-- Dynamic Chips Target (Populated via JS) -->
-                <div id="upcomingList" class="flex gap-2 overflow-x-auto pb-1 pt-1 no-scrollbar text-xs"></div>
+                <div id="upcomingList" class="no-scrollbar flex gap-2 overflow-x-auto pb-1 pt-1 text-xs"></div>
             </div>
         </main>
 
@@ -143,26 +249,54 @@
              3.4 MAIN VIEW: APP SETTINGS INTERFACE
              Secondary view for managing app configurations and themes.
              --------------------------------------------------------------- -->
-        <main id="settingsView" class="hidden flex-grow flex flex-col animate-fadeIn">
+        <main id="settingsView" class="animate-view hidden flex-grow flex-col">
             <h2 class="title-section mb-4">
                 App Settings
             </h2>
-            <div class="bg-white dark:bg-slate-800 rounded-3xl p-5 border border-slate-200 dark:border-slate-700 shadow-lg space-y-6">
-                
-                <!-- Dark / Light Appearance Toggle Row -->
-                <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-700/60">
-                    <div>
-                        <h3 class="font-bold text-slate-800 dark:text-slate-100 text-sm">Appearance Mode</h3>
-                        <p class="text-xs text-slate-400 dark:text-slate-500">Choose your preferred light or dark view</p>
+            <div class="card-panel space-y-6 !p-5">
+
+                <!-- Appearance Mode: follow the device, or force light / dark -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="modeLabel" class="text-sm font-bold text-ink">Appearance</h3>
+                    <p class="text-xs text-muted">Match your device, or pick light or dark</p>
+                    <div class="nav-seg mt-3 flex w-full" role="group" aria-labelledby="modeLabel">
+                        <button type="button" data-mode="system" aria-pressed="true" class="nav-tab flex-1">System</button>
+                        <button type="button" data-mode="light" aria-pressed="false" class="nav-tab flex-1">Light</button>
+                        <button type="button" data-mode="dark" aria-pressed="false" class="nav-tab flex-1">Dark</button>
                     </div>
-                    <button id="settingsThemeToggle" type="button" class="relative inline-flex h-8 w-14 flex-shrink-0 cursor-pointer rounded-full p-1 bg-slate-300 dark:bg-brand-600 transition-colors duration-200 z-10">
-                        <span id="toggleKnob" class="pointer-events-none h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-200 translate-x-0 dark:translate-x-6"></span>
+                </div>
+
+                <!-- Theme picker (cards are rendered by View.renderPaletteOptions) -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="paletteLabel" class="text-sm font-bold text-ink">Theme</h3>
+                    <p class="text-xs text-muted">Pick a color theme. It works in light and dark.</p>
+                    <div id="paletteGroup" class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="paletteLabel"></div>
+                </div>
+
+                <!-- Install: always reachable here, even after dismissing the banner -->
+                <div id="installSettingsRow" class="border-b border-line pb-5">
+                    <h3 class="text-sm font-bold text-ink">Install app</h3>
+                    <p id="installSettingsText" class="text-xs text-muted">Add Set to your Home Screen for one-tap access.</p>
+                    <button id="installSettingsBtn" type="button" class="btn-control mt-3 w-full !py-3">
+                        <i class="fa-solid fa-square-plus mr-1.5" aria-hidden="true"></i><span id="installSettingsLabel">Add to Home Screen</span>
                     </button>
                 </div>
 
+                <!-- Your data: sets live only on this device, so offer a backup -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="dataLabel" class="text-sm font-bold text-ink">Your data</h3>
+                    <p id="dataSummary" class="text-xs text-muted">Everything you add is stored on this device only.</p>
+                    <div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="dataLabel">
+                        <button id="exportBtn" type="button" class="btn-control !py-3"><i class="fa-solid fa-download mr-1.5" aria-hidden="true"></i>Export backup</button>
+                        <button id="importBtn" type="button" class="btn-control !py-3"><i class="fa-solid fa-upload mr-1.5" aria-hidden="true"></i>Import backup</button>
+                    </div>
+                    <p class="mt-2 text-xs text-muted">Importing only adds sets. Nothing you already have is changed or deleted.</p>
+                    <input id="importFile" type="file" accept="application/json,.json" class="hidden" tabindex="-1" aria-label="Choose a Set backup file">
+                </div>
+
                 <!-- Application Information Metadata -->
-                <div class="text-xs text-slate-400 dark:text-slate-500 space-y-1">
-                    <p class="font-semibold text-slate-600 dark:text-slate-300">Set Calendar App</p>
+                <div class="space-y-1 text-xs text-muted">
+                    <p class="font-semibold text-ink">Set Calendar App</p>
                     <p>Organize daily tasks with simple emoji pins and plans.</p>
                 </div>
             </div>
@@ -171,89 +305,167 @@
         <!-- ---------------------------------------------------------------
              3.5 GLOBAL FOOTER
              --------------------------------------------------------------- -->
-        <footer class="mt-4 text-center text-xs text-slate-400 dark:text-slate-600 py-2 hidden sm:block">
+        <footer class="desk:block mt-4 hidden py-2 text-center text-xs text-muted">
             Tap any date square to set or expand plans.
         </footer>
     </div>
 
+    <!-- Floating "add a set" button, aligned to the app column. Shown on Home + Calendar. -->
+    <div id="fabWrap" class="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[28rem] justify-end px-4" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))">
+        <button id="fabAdd" type="button" class="fab pointer-events-auto" aria-label="Add a set">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        </button>
+    </div>
+
     <!-- ===================================================================
          4. MODAL OVERLAYS & INTERACTIVE DIALOGS
+         Both are always in the DOM; View.openModal / closeModal flip data-open,
+         which drives the enter/exit transitions in style.css.
          =================================================================== -->
 
 <!-- -------------------------------------------------------------------
      4.1 DAY DETAIL MODAL
      ------------------------------------------------------------------- -->
-<div id="dayDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-    <div id="dayDetailCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-200 max-h-[85vh] flex flex-col justify-between">        
+<div id="dayDetailModal" class="modal modal--sheet" data-open="false" aria-hidden="true">
+    <div id="dayDetailCard" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="dayDetailTitle">
+        <div class="sheet-grabber desk:hidden" aria-hidden="true"></div>
         <!-- Modal Header -->
-        <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-700">
+        <div class="mb-3 flex items-center justify-between border-b border-line pb-3">
             <div>
-                <h3 id="dayDetailTitle" class="text-lg font-bold text-slate-800 dark:text-slate-100">Date Details</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500">Scheduled plans & active pins</p>
+                <h3 id="dayDetailTitle" class="text-lg font-bold text-ink">Date Details</h3>
+                <p class="text-xs text-muted">Scheduled plans & active pins</p>
             </div>
-            <button id="closeDayDetailBtn" type="button" class="btn-icon hover:rotate-90">
-                <i class="fa-solid fa-xmark text-sm"></i>
+            <button id="closeDayDetailBtn" type="button" class="btn-icon" aria-label="Close">
+                <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Dynamic Pin List Target (Populated via JS) -->
-        <div id="dayPinsList" class="flex-grow overflow-y-auto space-y-2 pr-1 my-2 min-h-[100px]"></div>
+        <div id="dayPinsList" class="my-2 min-h-[100px] flex-grow space-y-2 overflow-y-auto pr-1"></div>
 
         <!-- Action Button: Open Pin Creator -->
         <button id="addNewPinBtn" type="button" class="btn-primary mt-2">
-            <i class="fa-solid fa-plus text-xs"></i> New Set
+            <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i> New Set
         </button>
+    </div>
+</div>
+
+<!-- -------------------------------------------------------------------
+     4.1b INSTALL HELP MODAL (how to add to the Home Screen)
+     ------------------------------------------------------------------- -->
+<div id="installModal" class="modal modal--sheet" data-open="false" aria-hidden="true">
+    <div id="installCard" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+        <div class="sheet-grabber desk:hidden" aria-hidden="true"></div>
+        <div class="mb-3 flex items-center justify-between border-b border-line pb-3">
+            <h3 id="installTitle" class="text-lg font-bold text-ink">Add Set to your Home Screen</h3>
+            <button id="closeInstallBtn" type="button" class="btn-icon" aria-label="Close">
+                <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- iPhone / iPad: there is no install button in Safari, so we show the steps -->
+        <div id="installStepsIOS" class="hidden">
+            <ol class="space-y-3 text-sm text-ink">
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i></span><span class="pt-1"><strong>Tap the Share button</strong> in Safari's toolbar.</span></li>
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-square-plus" aria-hidden="true"></i></span><span class="pt-1">Scroll down and tap <strong>Add to Home Screen</strong>.</span></li>
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-check" aria-hidden="true"></i></span><span class="pt-1">Tap <strong>Add</strong>. Set now opens like any other app.</span></li>
+            </ol>
+            <div class="mt-4 rounded-2xl bg-surface-2 p-3 text-xs text-muted">
+                <strong class="text-ink">Heads up:</strong> on iPhone, the Home Screen app can keep its sets separately from Safari. If you already added sets here, export a backup first, then use Import backup (Settings) inside the new app.
+            </div>
+            <button id="installExportBtn" type="button" class="btn-control mt-3 w-full !py-3"><i class="fa-solid fa-download mr-1.5" aria-hidden="true"></i>Export backup first</button>
+        </div>
+
+        <!-- Other browsers without an install API -->
+        <div id="installStepsManual" class="hidden text-sm text-ink">
+            <p>Open your browser's menu and choose <strong>Install app</strong> or <strong>Add to Home Screen</strong>.</p>
+            <p class="mt-2 text-xs text-muted">If you don't see it, your browser may not support installing web apps.</p>
+        </div>
+
+        <button id="installDoneBtn" type="button" class="btn-primary mt-4">Got it</button>
     </div>
 </div>
 
 <!-- -------------------------------------------------------------------
      4.2 PIN EDITOR MODAL
      ------------------------------------------------------------------- -->
-<div id="pinModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
-    <div id="modalCard" class="bg-white dark:bg-slate-800 w-full sm:max-w-md rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-700 transition-all duration-200 max-h-[90vh] overflow-y-auto flex flex-col justify-between">        
+<div id="pinModal" class="modal modal--float" data-open="false" aria-hidden="true">
+    <div id="modalCard" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalDateTitle">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between mb-3">
+        <div class="mb-3 flex items-center justify-between">
             <div>
-                <h3 id="modalDateTitle" class="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">Set Date</h3>
-                <p class="text-xs text-slate-400 dark:text-slate-500">Choose an emoji and name your plan</p>
+                <h3 id="modalDateTitle" class="text-lg font-bold text-ink">Set Date</h3>
+                <p class="text-xs text-muted">Choose an emoji and name your plan</p>
             </div>
-            <button id="closeModalBtn" type="button" class="btn-icon">
-                <i class="fa-solid fa-xmark text-sm"></i>
+            <button id="closeModalBtn" type="button" class="btn-icon" aria-label="Close">
+                <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Pin Editor Form -->
-        <form id="pinForm" onsubmit="return false;" class="space-y-3 sm:space-y-4">
-            
+        <form id="pinForm" class="space-y-4">
+
             <!-- Event Title Input Field -->
             <div>
                 <label for="pinTitle" class="label-uppercase mb-1">Plan / Event</label>
-                <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" class="input-field">
+                <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" autocomplete="off" enterkeyhint="done" class="input-field">
             </div>
 
-            <!-- Emoji Picker Container -->
+            <!-- When: date (change it to MOVE this set) and an optional time -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="min-w-0">
+                    <label for="pinDate" class="label-uppercase mb-1">Date</label>
+                    <input type="date" id="pinDate" required class="input-field">
+                </div>
+                <div class="min-w-0">
+                    <div class="mb-1 flex items-center justify-between">
+                        <label for="pinTime" class="label-uppercase">Time</label>
+                        <button id="clearTimeBtn" type="button" class="hidden text-xs font-semibold text-muted underline">Clear</button>
+                    </div>
+                    <input type="time" id="pinTime" class="input-field">
+                </div>
+            </div>
+
+            <!-- Optional Note / Description -->
             <div>
-                <label class="label-uppercase mb-1.5">Choose Pin Emoji</label>
-                <div id="emojiPresets" class="grid grid-cols-6 gap-1.5 sm:gap-2"></div>
+                <label for="pinNote" class="label-uppercase mb-1">Note <span class="font-medium normal-case tracking-normal">(optional)</span></label>
+                <textarea id="pinNote" rows="2" maxlength="120" placeholder="Where, who, what to bring…" class="input-field resize-none"></textarea>
             </div>
 
-            <!-- Live Selected Emoji Preview Row -->
-            <div class="flex items-center justify-between pt-1">
-                <span class="text-xs text-slate-400">Selected Pin:</span>
-                <div id="selectedEmojiPreview" class="text-xl sm:text-2xl bg-slate-100 dark:bg-slate-700/60 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center border border-slate-200 dark:border-slate-600">📍</div>
+            <!-- Emoji Picker Container: quick picks + any emoji from the device keyboard -->
+            <div>
+                <span id="emojiLabel" class="label-uppercase mb-1.5">Choose Pin Emoji</span>
+                <div id="emojiPresets" class="grid grid-cols-6 gap-2" role="group" aria-labelledby="emojiLabel"></div>
+            </div>
+
+            <!-- Live Selected Emoji Preview + custom emoji input -->
+            <div class="flex items-center gap-3 pt-1">
+                <div id="selectedEmojiPreview" class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-line bg-surface-2 text-3xl" aria-hidden="true">📍</div>
+                <div class="min-w-0 flex-grow">
+                    <label for="customEmoji" class="label-uppercase mb-1">Or use any emoji</label>
+                    <input type="text" id="customEmoji" autocomplete="off" placeholder="Open your emoji keyboard 😎" class="input-field !py-2.5">
+                </div>
             </div>
 
             <!-- Form Action Buttons -->
             <div class="flex gap-2 pt-2">
-                <button id="deletePinBtn" type="button" class="hidden px-4 py-3 bg-red-100 hover:bg-red-200 dark:bg-red-950/50 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 rounded-2xl font-bold text-sm transition-all active:scale-95 flex items-center justify-center">
-                    <i class="fa-solid fa-trash-can"></i>
+                <button id="deletePinBtn" type="button" aria-label="Delete this set" class="btn-danger hidden">
+                    <i class="fa-solid fa-trash-can" aria-hidden="true"></i>
                 </button>
-                <button id="savePinBtn" type="submit" class="btn-primary flex-grow py-3">
+                <button id="savePinBtn" type="submit" class="btn-primary flex-grow">
                     Set It
                 </button>
             </div>
         </form>
     </div>
+</div>
+
+<!-- -------------------------------------------------------------------
+     4.3 TOAST (e.g. "Deleted. Undo")
+     ------------------------------------------------------------------- -->
+<div id="toast" class="toast" data-open="false" role="status" aria-live="polite" aria-atomic="true">
+    <span id="toastMessage" class="line-clamp-2"></span>
+    <button id="toastAction" type="button" class="toast-action">Undo</button>
 </div>
 </body>
 </html>
