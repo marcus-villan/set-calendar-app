@@ -15,9 +15,27 @@ export function newId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+// ---------- Dates ----------
+
 function parseDateStr(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return { y, m, d };
+}
+
+// True only for real calendar dates in "YYYY-MM-DD" form ("2026-02-31" is rejected).
+export function isValidDateStr(dateStr) {
+  if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false;
+  const { y, m, d } = parseDateStr(dateStr);
+  const date = new Date(y, m - 1, d);
+  return date.getFullYear() === y && date.getMonth() === m - 1 && date.getDate() === d;
+}
+
+// Whole days from `fromStr` to `toStr` (negative if `toStr` is earlier).
+// Date.UTC avoids daylight-saving off-by-one-hour errors when counting days.
+export function daysBetween(fromStr, toStr) {
+  const a = parseDateStr(fromStr);
+  const b = parseDateStr(toStr);
+  return Math.round((Date.UTC(b.y, b.m - 1, b.d) - Date.UTC(a.y, a.m - 1, a.d)) / 86400000);
 }
 
 // "Oct 24"
@@ -26,16 +44,75 @@ export function shortDate(dateStr) {
   return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+// "Sat, Oct 24"
+export function weekdayDate(dateStr) {
+  const { y, m, d } = parseDateStr(dateStr);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// "Monday, October 5"
+export function longDate(dateStr) {
+  const { y, m, d } = parseDateStr(dateStr);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
+// "Sat, Oct 10", plus the year when it isn't the current year ("Sat, Oct 10, 2025").
+export function dateLabelWithYear(dateStr, todayStr) {
+  const { y, m, d } = parseDateStr(dateStr);
+  const options = { weekday: 'short', month: 'short', day: 'numeric' };
+  if (y !== parseDateStr(todayStr).y) options.year = 'numeric';
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', options);
+}
+
 // "Today", "Tomorrow", "Fri" (within the next week), otherwise "Oct 24".
 export function relativeDayLabel(dateStr, todayStr) {
-  const a = parseDateStr(dateStr);
-  const b = parseDateStr(todayStr);
-  // Date.UTC avoids daylight-saving off-by-one-hour errors when counting days.
-  const diff = Math.round((Date.UTC(a.y, a.m - 1, a.d) - Date.UTC(b.y, b.m - 1, b.d)) / 86400000);
+  const diff = daysBetween(todayStr, dateStr);
   if (diff === 0) return 'Today';
   if (diff === 1) return 'Tomorrow';
-  if (diff > 1 && diff < 7) return new Date(a.y, a.m - 1, a.d).toLocaleDateString('en-US', { weekday: 'short' });
+  if (diff > 1 && diff < 7) {
+    const { y, m, d } = parseDateStr(dateStr);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' });
+  }
   return shortDate(dateStr);
+}
+
+// Splits upcoming items ([{ dateStr, pin }], already sorted by date) into display groups.
+// Empty groups are left out.
+export function groupByRange(items, todayStr) {
+  const groups = [
+    { key: 'today', label: 'Today', items: [] },
+    { key: 'tomorrow', label: 'Tomorrow', items: [] },
+    { key: 'week', label: 'This week', items: [] },
+    { key: 'later', label: 'Later', items: [] }
+  ];
+  for (const item of items) {
+    const diff = daysBetween(todayStr, item.dateStr);
+    if (diff <= 0) groups[0].items.push(item);
+    else if (diff === 1) groups[1].items.push(item);
+    else if (diff < 7) groups[2].items.push(item);
+    else groups[3].items.push(item);
+  }
+  return groups.filter(g => g.items.length > 0);
+}
+
+// ---------- Time ----------
+// Stored as 24-hour "HH:MM" (what <input type="time"> gives us); shown as "7:30 PM".
+
+export function isValidTime(time) {
+  return typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+}
+
+export function formatTime(time) {
+  if (!isValidTime(time)) return '';
+  const [h, m] = time.split(':').map(Number);
+  return `${h % 12 || 12}:${pad(m)} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+// The earliest set time later than `nowTime` ("HH:MM") among `pins`, or null. "HH:MM" strings
+// compare correctly as plain text.
+export function nextTimeAfter(pins, nowTime) {
+  const later = pins.map(p => p.time).filter(t => isValidTime(t) && t > nowTime).sort();
+  return later[0] ?? null;
 }
 
 // ---------- Emoji ----------

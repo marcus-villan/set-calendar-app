@@ -1,4 +1,4 @@
-import { toDateStr, dateToStr, relativeDayLabel } from './utils.js';
+import { toDateStr, dateToStr, relativeDayLabel, formatTime, longDate, dateLabelWithYear, shortDate, weekdayDate } from './utils.js';
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -16,9 +16,28 @@ export const View = {
       prevMonthBtn: document.getElementById('prevMonth'),
       nextMonthBtn: document.getElementById('nextMonth'),
       todayBtn: document.getElementById('todayBtn'),
+      navHomeBtn: document.getElementById('navHomeBtn'),
       navCalendarBtn: document.getElementById('navCalendarBtn'),
       navSettingsBtn: document.getElementById('navSettingsBtn'),
+      homeView: document.getElementById('homeView'),
       calendarView: document.getElementById('calendarView'),
+      todayHeading: document.getElementById('todayHeading'),
+      todaySummary: document.getElementById('todaySummary'),
+      todayList: document.getElementById('todayList'),
+      todayAddBtn: document.getElementById('todayAddBtn'),
+      searchInput: document.getElementById('searchInput'),
+      nextUpTitle: document.getElementById('nextUpTitle'),
+      nextUpCount: document.getElementById('nextUpCount'),
+      nextUpList: document.getElementById('nextUpList'),
+      statsTitle: document.getElementById('statsTitle'),
+      statTotal: document.getElementById('statTotal'),
+      statDays: document.getElementById('statDays'),
+      statBusiest: document.getElementById('statBusiest'),
+      statBusiestLabel: document.getElementById('statBusiestLabel'),
+      statNext: document.getElementById('statNext'),
+      statNextLabel: document.getElementById('statNextLabel'),
+      fabWrap: document.getElementById('fabWrap'),
+      fabAdd: document.getElementById('fabAdd'),
       settingsView: document.getElementById('settingsView'),
       modeButtons: [...document.querySelectorAll('[data-mode]')],
       paletteGroup: document.getElementById('paletteGroup'),
@@ -32,6 +51,9 @@ export const View = {
       modalDateTitle: document.getElementById('modalDateTitle'),
       pinTitleInput: document.getElementById('pinTitle'),
       pinNoteInput: document.getElementById('pinNote'),
+      pinDateInput: document.getElementById('pinDate'),
+      pinTimeInput: document.getElementById('pinTime'),
+      clearTimeBtn: document.getElementById('clearTimeBtn'),
       customEmojiInput: document.getElementById('customEmoji'),
       toast: document.getElementById('toast'),
       toastMessage: document.getElementById('toastMessage'),
@@ -95,15 +117,18 @@ export const View = {
     });
   },
 
+  // tabName: 'home' | 'calendar' | 'settings'
   switchTab(tabName) {
-    const { calendarView, settingsView, navCalendarBtn, navSettingsBtn } = this.elements;
-    const showCalendar = tabName === 'calendar';
-
-    calendarView.classList.toggle('hidden', !showCalendar);
-    settingsView.classList.toggle('hidden', showCalendar);
-    // The .nav-tab[aria-current="page"] rule in style.css does the visual styling.
-    navCalendarBtn.setAttribute('aria-current', showCalendar ? 'page' : 'false');
-    navSettingsBtn.setAttribute('aria-current', showCalendar ? 'false' : 'page');
+    const views = { home: this.elements.homeView, calendar: this.elements.calendarView, settings: this.elements.settingsView };
+    const buttons = { home: this.elements.navHomeBtn, calendar: this.elements.navCalendarBtn, settings: this.elements.navSettingsBtn };
+    for (const name of Object.keys(views)) {
+      views[name].classList.toggle('hidden', name !== tabName);
+      // The .nav-tab[aria-current="page"] rule in style.css does the visual styling.
+      buttons[name].setAttribute('aria-current', name === tabName ? 'page' : 'false');
+    }
+    // "Today" jumps the month grid, so it only makes sense on the calendar; the add button isn't needed in Settings.
+    this.elements.todayBtn.classList.toggle('hidden', tabName !== 'calendar');
+    this.elements.fabWrap.classList.toggle('hidden', tabName === 'settings');
   },
 
   // ---------- Modals ----------
@@ -146,7 +171,7 @@ export const View = {
     if (!modal) return;
     const items = [...modal.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null);
     // The toast lives outside the modal; keep its Undo button keyboard-reachable.
-    if (this.elements.toast.dataset.open === 'true') items.push(this.elements.toastAction);
+    if (this.elements.toast.dataset.open === 'true' && !this.elements.toastAction.classList.contains('hidden')) items.push(this.elements.toastAction);
     if (items.length === 0) return;
     const first = items[0];
     const last = items[items.length - 1];
@@ -265,6 +290,70 @@ export const View = {
     return cell;
   },
 
+  // One set as a row: emoji, title, an optional "time · note" line, and edit / delete buttons.
+  // User text only ever goes in through textContent, so it is never parsed as HTML.
+  buildPinRow(pin, { onEdit, onDelete, index = 0 }) {
+    const item = document.createElement('div');
+    item.className = "pin-row animate-slideUp";
+    item.style.animationDelay = `${index * 40}ms`; // gentle stagger
+
+    const content = document.createElement('div');
+    content.className = "flex min-w-0 items-center gap-2.5";
+
+    const emojiSpan = document.createElement('span');
+    emojiSpan.className = "text-xl";
+    emojiSpan.setAttribute('aria-hidden', 'true');
+    emojiSpan.textContent = pin.emoji;
+
+    const text = document.createElement('div');
+    text.className = "min-w-0";
+    const titleSpan = document.createElement('p');
+    titleSpan.className = "truncate text-sm font-semibold text-ink";
+    titleSpan.textContent = pin.title;
+    text.appendChild(titleSpan);
+
+    const time = formatTime(pin.time);
+    if (time || pin.note) {
+      const meta = document.createElement('p');
+      meta.className = "line-clamp-2 text-xs text-muted";
+      if (time) {
+        const timeSpan = document.createElement('span');
+        timeSpan.className = "font-semibold text-accent";
+        timeSpan.textContent = time;
+        meta.appendChild(timeSpan);
+      }
+      if (time && pin.note) meta.appendChild(document.createTextNode(' · '));
+      if (pin.note) meta.appendChild(document.createTextNode(pin.note));
+      text.appendChild(meta);
+    }
+
+    content.appendChild(emojiSpan);
+    content.appendChild(text);
+
+    const actions = document.createElement('div');
+    actions.className = "flex shrink-0 items-center gap-0.5";
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = "row-action";
+    editBtn.setAttribute('aria-label', `Edit ${pin.title}`);
+    editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square text-xs" aria-hidden="true"></i>';
+    editBtn.onclick = () => onEdit(pin.id);
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = "row-action row-action--danger";
+    deleteBtn.setAttribute('aria-label', `Delete ${pin.title}`);
+    deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i>';
+    deleteBtn.onclick = () => onDelete(pin.id);
+
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    item.appendChild(content);
+    item.appendChild(actions);
+    return item;
+  },
+
   renderDayPinsList(pins, dateStr, onEditPin, onDeletePin) {
     this.elements.dayPinsList.innerHTML = '';
     const dayPins = pins[dateStr] || [];
@@ -279,57 +368,7 @@ export const View = {
     }
 
     dayPins.forEach((pin, i) => {
-      const item = document.createElement('div');
-      item.className = "pin-row animate-slideUp";
-      item.style.animationDelay = `${i * 40}ms`; // gentle stagger
-
-      const content = document.createElement('div');
-      content.className = "flex min-w-0 items-center gap-2.5";
-
-      const emojiSpan = document.createElement('span');
-      emojiSpan.className = "text-xl";
-      emojiSpan.setAttribute('aria-hidden', 'true');
-      emojiSpan.textContent = pin.emoji;
-
-      // Title with the optional note underneath (textContent only: user text is never parsed as HTML)
-      const text = document.createElement('div');
-      text.className = "min-w-0";
-      const titleSpan = document.createElement('p');
-      titleSpan.className = "truncate text-sm font-semibold text-ink";
-      titleSpan.textContent = pin.title;
-      text.appendChild(titleSpan);
-      if (pin.note) {
-        const noteSpan = document.createElement('p');
-        noteSpan.className = "line-clamp-2 text-xs text-muted";
-        noteSpan.textContent = pin.note;
-        text.appendChild(noteSpan);
-      }
-
-      content.appendChild(emojiSpan);
-      content.appendChild(text);
-
-      const actions = document.createElement('div');
-      actions.className = "flex shrink-0 items-center gap-0.5";
-
-      const editBtn = document.createElement('button');
-      editBtn.type = 'button';
-      editBtn.className = "row-action";
-      editBtn.setAttribute('aria-label', `Edit ${pin.title}`);
-      editBtn.innerHTML = '<i class="fa-solid fa-pen-to-square text-xs" aria-hidden="true"></i>';
-      editBtn.onclick = () => onEditPin(pin.id);
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = "row-action row-action--danger";
-      deleteBtn.setAttribute('aria-label', `Delete ${pin.title}`);
-      deleteBtn.innerHTML = '<i class="fa-solid fa-trash-can text-xs" aria-hidden="true"></i>';
-      deleteBtn.onclick = () => onDeletePin(pin.id);
-
-      actions.appendChild(editBtn);
-      actions.appendChild(deleteBtn);
-      item.appendChild(content);
-      item.appendChild(actions);
-      this.elements.dayPinsList.appendChild(item);
+      this.elements.dayPinsList.appendChild(this.buildPinRow(pin, { onEdit: onEditPin, onDelete: onDeletePin, index: i }));
     });
   },
 
@@ -345,7 +384,8 @@ export const View = {
     }
 
     items.forEach(({ dateStr, pin }) => {
-      const when = relativeDayLabel(dateStr, todayStr);
+      const time = formatTime(pin.time);
+      const when = relativeDayLabel(dateStr, todayStr) + (time ? ` · ${time}` : '');
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = "chip";
@@ -373,15 +413,152 @@ export const View = {
     this.elements.pinCount.textContent = `${items.length} upcoming`;
   },
 
+  // ---------- Home dashboard ----------
+
+  // One tappable row: emoji, title, and a "when · time · note" line. Tapping opens the editor.
+  buildAgendaRow({ dateStr, pin }, whenLabel, onOpen) {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = "agenda-row";
+    const time = formatTime(pin.time);
+    row.setAttribute('aria-label', `Edit ${pin.title}, ${whenLabel}${time ? `, ${time}` : ''}`);
+
+    const emoji = document.createElement('span');
+    emoji.className = "text-xl";
+    emoji.setAttribute('aria-hidden', 'true');
+    emoji.textContent = pin.emoji;
+
+    const text = document.createElement('div');
+    text.className = "min-w-0 flex-grow";
+    const title = document.createElement('p');
+    title.className = "truncate text-sm font-semibold text-ink";
+    title.textContent = pin.title;
+    const meta = document.createElement('p');
+    meta.className = "truncate text-xs text-muted";
+    meta.appendChild(document.createTextNode(whenLabel));
+    if (time) {
+      meta.appendChild(document.createTextNode(' · '));
+      const timeSpan = document.createElement('span');
+      timeSpan.className = "font-semibold text-accent";
+      timeSpan.textContent = time;
+      meta.appendChild(timeSpan);
+    }
+    if (pin.note) meta.appendChild(document.createTextNode(` · ${pin.note}`));
+    text.appendChild(title);
+    text.appendChild(meta);
+
+    const chevron = document.createElement('i');
+    chevron.className = "fa-solid fa-chevron-right text-[10px] text-muted";
+    chevron.setAttribute('aria-hidden', 'true');
+
+    row.appendChild(emoji);
+    row.appendChild(text);
+    row.appendChild(chevron);
+    row.onclick = () => onOpen(dateStr, pin.id);
+    return row;
+  },
+
+  // `summary` is computed by the caller (it needs the current time); pins are today's sets.
+  renderToday(todayStr, pins, summary, { onEdit, onDelete }) {
+    this.elements.todayHeading.textContent = longDate(todayStr);
+    this.elements.todaySummary.textContent = summary;
+    this.elements.todayList.innerHTML = '';
+    pins.forEach((pin, i) => {
+      this.elements.todayList.appendChild(this.buildPinRow(pin, { onEdit, onDelete, index: i }));
+    });
+  },
+
+  // groups: [{ key, label, items: [{ dateStr, pin }] }] from groupByRange().
+  renderNextUp(groups, todayStr, hiddenCount, onOpen) {
+    const { nextUpList, nextUpTitle, nextUpCount } = this.elements;
+    nextUpList.innerHTML = '';
+    nextUpTitle.textContent = 'Next up';
+
+    const total = groups.reduce((n, g) => n + g.items.length, 0);
+    nextUpCount.textContent = String(total + hiddenCount);
+
+    if (total === 0) {
+      const empty = document.createElement('p');
+      empty.className = "py-2 text-center text-sm text-muted";
+      empty.textContent = 'Nothing else coming up. Tap + to set something.';
+      nextUpList.appendChild(empty);
+      return;
+    }
+
+    groups.forEach(group => {
+      const section = document.createElement('div');
+      section.className = "space-y-2";
+      const heading = document.createElement('h3');
+      heading.className = "label-uppercase";
+      heading.textContent = group.label;
+      section.appendChild(heading);
+      group.items.forEach(item => {
+        section.appendChild(this.buildAgendaRow(item, weekdayDate(item.dateStr), onOpen));
+      });
+      nextUpList.appendChild(section);
+    });
+
+    if (hiddenCount > 0) {
+      const more = document.createElement('p');
+      more.className = "text-center text-xs text-muted";
+      more.textContent = `+${hiddenCount} more. See them in Calendar.`;
+      nextUpList.appendChild(more);
+    }
+  },
+
+  // Flat list of matches while the search box has text.
+  renderSearchResults(query, results, todayStr, onOpen) {
+    const { nextUpList, nextUpTitle, nextUpCount } = this.elements;
+    nextUpList.innerHTML = '';
+    nextUpTitle.textContent = 'Search results';
+    nextUpCount.textContent = String(results.length);
+
+    if (results.length === 0) {
+      const empty = document.createElement('p');
+      empty.className = "py-2 text-center text-sm text-muted";
+      empty.textContent = `No sets match “${query.trim()}”.`;
+      nextUpList.appendChild(empty);
+      return;
+    }
+    const list = document.createElement('div');
+    list.className = "space-y-2";
+    results.forEach(item => list.appendChild(this.buildAgendaRow(item, dateLabelWithYear(item.dateStr, todayStr), onOpen)));
+    nextUpList.appendChild(list);
+  },
+
+  // stats: from Model.stats(); next: from Model.nextSet() (or null).
+  renderStats(monthName, stats, next, todayStr) {
+    const e = this.elements;
+    e.statsTitle.textContent = `${monthName} at a glance`;
+    e.statTotal.textContent = String(stats.total);
+    e.statDays.textContent = String(stats.daysPlanned);
+    if (stats.busiest) {
+      e.statBusiest.textContent = shortDate(stats.busiest.dateStr);
+      e.statBusiestLabel.textContent = `Busiest day · ${stats.busiest.count} ${stats.busiest.count === 1 ? 'set' : 'sets'}`;
+    } else {
+      e.statBusiest.textContent = '—';
+      e.statBusiestLabel.textContent = 'Busiest day';
+    }
+    if (next) {
+      e.statNext.textContent = relativeDayLabel(next.dateStr, todayStr);
+      e.statNextLabel.textContent = `Next · ${next.pin.title}`;
+    } else {
+      e.statNext.textContent = '—';
+      e.statNextLabel.textContent = 'Next set';
+    }
+  },
+
   // ---------- Toast ("Deleted. Undo") ----------
-  showToast(message, actionLabel, onAction, duration = 6000) {
+  showToast(message, actionLabel = null, onAction = null, duration = 6000) {
     const { toast, toastMessage, toastAction } = this.elements;
     clearTimeout(this.toastTimer);
     toastMessage.textContent = message;
-    toastAction.textContent = actionLabel;
+    // No action label = a plain message (e.g. "Moved to Sat, Oct 12"), so hide the button.
+    toastAction.classList.toggle('hidden', !actionLabel);
+    toastAction.textContent = actionLabel ?? '';
     toastAction.onclick = () => {
       this.hideToast();
-      onAction();
+      onAction?.();
     };
     toast.dataset.open = 'true';
     this.toastTimer = setTimeout(() => this.hideToast(), duration);

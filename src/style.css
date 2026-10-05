@@ -346,6 +346,34 @@ textarea {
     @apply bg-accent-soft ring-2 ring-accent;
   }
 
+  /* ---- Floating add button (hidden while a modal is open) ---- */
+  .fab {
+    @apply flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl text-primary-ink shadow-xl;
+    transition: transform 0.3s var(--ease-spring), opacity 0.2s ease;
+  }
+  .fab:active {
+    transform: scale(0.88);
+  }
+  body[data-modal-open] .fab {
+    transform: scale(0.6);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* ---- Home dashboard ---- */
+  .agenda-row {
+    @apply flex w-full items-center gap-3 rounded-2xl border border-line bg-bg p-3 text-left transition duration-200 hover:border-ink/30 active:scale-[0.98];
+  }
+  .stat-tile {
+    @apply min-w-0 rounded-2xl border border-line bg-bg p-3;
+  }
+  .stat-value {
+    @apply truncate text-2xl font-extrabold tracking-tight text-ink;
+  }
+  .stat-label {
+    @apply mt-0.5 truncate text-xs text-muted;
+  }
+
   /* ---- Pin rows in the day sheet ---- */
   .pin-row {
     @apply flex items-center justify-between gap-2 rounded-2xl border border-line bg-bg p-3 transition duration-200 hover:border-ink/30;

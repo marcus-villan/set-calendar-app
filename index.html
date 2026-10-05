@@ -95,7 +95,7 @@
          3. MAIN APPLICATION CONTAINER
          =================================================================== -->
     <!-- Fixed-width app column: identical at any window size or browser zoom level. -->
-    <div class="mx-auto flex min-h-dvh w-full max-w-[28rem] flex-col px-3 py-4">
+    <div class="mx-auto flex min-h-dvh w-full max-w-[28rem] flex-col px-3 pb-28 pt-4">
 
         <!-- ---------------------------------------------------------------
              3.1 GLOBAL APPLICATION HEADER
@@ -110,7 +110,7 @@
                 </div>
             </div>
             <!-- Quick reset button to skip back to current system date -->
-            <button id="todayBtn" type="button" class="btn-control">Today</button>
+            <button id="todayBtn" type="button" class="btn-control hidden">Today</button>
         </header>
 
         <!-- ---------------------------------------------------------------
@@ -120,7 +120,10 @@
              --------------------------------------------------------------- -->
         <nav class="mb-4" aria-label="Primary">
             <div class="nav-seg">
-                <button id="navCalendarBtn" type="button" class="nav-tab" aria-current="page">
+                <button id="navHomeBtn" type="button" class="nav-tab" aria-current="page">
+                    <i class="fa-solid fa-house mr-1.5" aria-hidden="true"></i> Home
+                </button>
+                <button id="navCalendarBtn" type="button" class="nav-tab" aria-current="false">
                     <i class="fa-solid fa-calendar-days mr-1.5" aria-hidden="true"></i> Calendar
                 </button>
                 <button id="navSettingsBtn" type="button" class="nav-tab" aria-current="false">
@@ -133,7 +136,51 @@
              3.3 MAIN VIEW: CALENDAR INTERFACE
              Default active view rendering monthly grids and active event chips.
              --------------------------------------------------------------- -->
-        <main id="calendarView" class="animate-view flex flex-grow flex-col gap-3">
+        <main id="homeView" class="animate-view flex flex-grow flex-col gap-3">
+
+            <!-- Today: what is on right now, with one-tap add -->
+            <section class="card-panel !p-4" aria-labelledby="todayHeading">
+                <p class="label-uppercase">Today</p>
+                <h2 id="todayHeading" class="title-section mt-0.5">&nbsp;</h2>
+                <p id="todaySummary" class="mt-0.5 text-sm text-muted"></p>
+                <div id="todayList" class="mt-3 space-y-2"></div>
+                <button id="todayAddBtn" type="button" class="btn-primary mt-3">
+                    <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i> Add for today
+                </button>
+            </section>
+
+            <!-- Search across every set (title, note, emoji) -->
+            <div class="relative">
+                <label for="searchInput" class="sr-only">Search your sets</label>
+                <input id="searchInput" type="search" placeholder="Search your sets" autocomplete="off" enterkeyhint="search" class="input-field !pl-10">
+                <i class="fa-solid fa-magnifying-glass pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-xs text-muted" aria-hidden="true"></i>
+            </div>
+
+            <!-- Next up (grouped), or search results while a search is active -->
+            <section class="card-panel !p-4" aria-labelledby="nextUpTitle">
+                <div class="mb-3 flex items-center justify-between">
+                    <h2 id="nextUpTitle" class="label-uppercase">Next up</h2>
+                    <span id="nextUpCount" class="badge">0</span>
+                </div>
+                <div id="nextUpList" class="space-y-4"></div>
+            </section>
+
+            <!-- Month at a glance -->
+            <section class="card-panel !p-4" aria-labelledby="statsTitle">
+                <h2 id="statsTitle" class="label-uppercase mb-3">This month</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="stat-tile"><p id="statTotal" class="stat-value">0</p><p class="stat-label">Sets this month</p></div>
+                    <div class="stat-tile"><p id="statDays" class="stat-value">0</p><p class="stat-label">Days planned</p></div>
+                    <div class="stat-tile"><p id="statBusiest" class="stat-value">&mdash;</p><p id="statBusiestLabel" class="stat-label">Busiest day</p></div>
+                    <div class="stat-tile"><p id="statNext" class="stat-value">&mdash;</p><p id="statNextLabel" class="stat-label">Next set</p></div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ---------------------------------------------------------------
+             3.3b MAIN VIEW: CALENDAR (month grid)
+             --------------------------------------------------------------- -->
+        <main id="calendarView" class="animate-view hidden flex flex-grow flex-col gap-3">
 
             <!-- Month Selection & Controls Header -->
             <div class="flex items-center justify-between px-1">
@@ -223,6 +270,13 @@
         </footer>
     </div>
 
+    <!-- Floating "add a set" button, aligned to the app column. Shown on Home + Calendar. -->
+    <div id="fabWrap" class="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[28rem] justify-end px-4" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))">
+        <button id="fabAdd" type="button" class="fab pointer-events-auto" aria-label="Add a set">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i>
+        </button>
+    </div>
+
     <!-- ===================================================================
          4. MODAL OVERLAYS & INTERACTIVE DIALOGS
          Both are always in the DOM; View.openModal / closeModal flip data-open,
@@ -279,6 +333,21 @@
             <div>
                 <label for="pinTitle" class="label-uppercase mb-1">Plan / Event</label>
                 <input type="text" id="pinTitle" placeholder="e.g. hangout with Alex" maxlength="32" autocomplete="off" enterkeyhint="done" class="input-field">
+            </div>
+
+            <!-- When: date (change it to MOVE this set) and an optional time -->
+            <div class="grid grid-cols-2 gap-3">
+                <div class="min-w-0">
+                    <label for="pinDate" class="label-uppercase mb-1">Date</label>
+                    <input type="date" id="pinDate" required class="input-field">
+                </div>
+                <div class="min-w-0">
+                    <div class="mb-1 flex items-center justify-between">
+                        <label for="pinTime" class="label-uppercase">Time</label>
+                        <button id="clearTimeBtn" type="button" class="hidden text-xs font-semibold text-muted underline">Clear</button>
+                    </div>
+                    <input type="time" id="pinTime" class="input-field">
+                </div>
             </div>
 
             <!-- Optional Note / Description -->
