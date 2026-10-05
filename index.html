@@ -254,6 +254,18 @@
                     <div id="paletteGroup" class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="paletteLabel"></div>
                 </div>
 
+                <!-- Your data: sets live only on this device, so offer a backup -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="dataLabel" class="text-sm font-bold text-ink">Your data</h3>
+                    <p id="dataSummary" class="text-xs text-muted">Everything you add is stored on this device only.</p>
+                    <div class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="dataLabel">
+                        <button id="exportBtn" type="button" class="btn-control !py-3"><i class="fa-solid fa-download mr-1.5" aria-hidden="true"></i>Export backup</button>
+                        <button id="importBtn" type="button" class="btn-control !py-3"><i class="fa-solid fa-upload mr-1.5" aria-hidden="true"></i>Import backup</button>
+                    </div>
+                    <p class="mt-2 text-xs text-muted">Importing only adds sets. Nothing you already have is changed or deleted.</p>
+                    <input id="importFile" type="file" accept="application/json,.json" class="hidden" tabindex="-1" aria-label="Choose a Set backup file">
+                </div>
+
                 <!-- Application Information Metadata -->
                 <div class="space-y-1 text-xs text-muted">
                     <p class="font-semibold text-ink">Set Calendar App</p>
@@ -388,7 +400,7 @@
      4.3 TOAST (e.g. "Deleted. Undo")
      ------------------------------------------------------------------- -->
 <div id="toast" class="toast" data-open="false" role="status" aria-live="polite" aria-atomic="true">
-    <span id="toastMessage" class="truncate"></span>
+    <span id="toastMessage" class="line-clamp-2"></span>
     <button id="toastAction" type="button" class="toast-action">Undo</button>
 </div>
 </body>

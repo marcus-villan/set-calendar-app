@@ -2,6 +2,7 @@ import './style.css';
 import { Model } from './model.js';
 import { View } from './view.js';
 import { dateToStr, lastEmoji, isValidDateStr, shortDate, weekdayDate, groupByRange, nextTimeAfter, formatTime } from './utils.js';
+import { parseBackup, backupFileName, countSets, MAX_BACKUP_BYTES } from './backup.js';
 
 // iOS Safari ignores user-scalable=no. Its pinch-zoom (and macOS Safari's trackpad pinch) fires
 // non-standard gesture* events, which we can cancel. Double-tap zoom is handled in CSS (touch-action).
@@ -61,10 +62,21 @@ document.addEventListener('DOMContentLoaded', () => {
     View.renderDayPinsList(Model.pins, Model.selectedDateStr, openPinModal, (id) => deleteWithUndo(Model.selectedDateStr, id));
   }
 
+  const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+  function refreshDataSummary() {
+    const total = countSets(Model.pins);
+    const days = Object.keys(Model.pins).length;
+    View.elements.dataSummary.textContent = total === 0
+      ? 'No sets yet. Everything you add is stored on this device only.'
+      : `${plural(total, 'set')} across ${plural(days, 'day')}, stored on this device only.`;
+  }
+
   // Anything that changes sets calls this, so every screen stays in sync.
   function refreshAll() {
     refreshCalendar();
     refreshHome();
+    refreshDataSummary();
     if (isDaySheetOpen()) renderDayList();
   }
 
@@ -232,6 +244,45 @@ document.addEventListener('DOMContentLoaded', () => {
       deleteWithUndo(Model.activePinDateStr, Model.activePinId);
       closePinModal();
     }
+  });
+
+  // ---------- Backup: export / import ----------
+  View.elements.exportBtn.addEventListener('click', () => {
+    const total = countSets(Model.pins);
+    if (total === 0) return View.showToast('Nothing to export yet. Add a set first.');
+    const blob = new Blob([JSON.stringify(Model.exportBackup(), null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = backupFileName();
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    View.showToast(`Backup saved: ${plural(total, 'set')}`);
+  });
+
+  View.elements.importBtn.addEventListener('click', () => View.elements.importFile.click());
+
+  View.elements.importFile.addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = ''; // so choosing the same file again still fires "change"
+    if (!file) return;
+    if (file.size > MAX_BACKUP_BYTES) return View.showToast('That file is too large to be a Set backup.');
+
+    const result = parseBackup(await file.text());
+    if (!result.ok) return View.showToast(result.error);
+
+    const snapshot = JSON.parse(JSON.stringify(Model.pins)); // for Undo
+    const { added, duplicates } = Model.importPins(result.pins);
+    refreshAll();
+
+    if (added === 0) return View.showToast(`Nothing new: all ${plural(duplicates, 'set')} are already here.`);
+    const notes = [duplicates && `${duplicates} already here`, result.skipped && `${result.skipped} skipped`].filter(Boolean);
+    View.showToast(`Imported ${plural(added, 'set')}${notes.length ? ` · ${notes.join(' · ')}` : ''}`, 'Undo', () => {
+      Model.replaceAll(snapshot);
+      refreshAll();
+    }, 9000);
   });
 
   // Coming back to the app (e.g. the next morning) should show the right "today".

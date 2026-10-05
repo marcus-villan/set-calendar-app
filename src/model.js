@@ -1,4 +1,5 @@
 import { newId, isValidTime, daysBetween } from './utils.js';
+import { buildBackup, mergePins } from './backup.js';
 
 export const Model = {
   currentDate: new Date(),
@@ -161,6 +162,26 @@ export const Model = {
       if (!busiest || this.pins[d].length > busiest.count) busiest = { dateStr: d, count: this.pins[d].length };
     }
     return { total, daysPlanned: days.length, busiest };
+  },
+
+  // ---------- Backup ----------
+  exportBackup() {
+    return buildBackup(this.pins);
+  },
+
+  // `incoming` must come from parseBackup() (already validated). Adds sets, never removes any.
+  importPins(incoming) {
+    const { pins, added, duplicates } = mergePins(this.pins, incoming);
+    this.pins = pins;
+    Object.keys(this.pins).forEach(dateStr => this.sortDay(dateStr));
+    this.save();
+    return { added, duplicates };
+  },
+
+  // Put a whole saved snapshot back (used by "Undo" after an import).
+  replaceAll(pins) {
+    this.pins = pins;
+    this.save();
   },
 
   // Days from today until the next set (0 = today); null if nothing is coming up.
