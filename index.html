@@ -24,6 +24,18 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Set — Quick Calendar Pins</title>
 
+    <!-- Theme bootstrap: runs before first paint so dark-mode users never see a white flash.
+         Must stay a plain inline script (not the module below). -->
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem('theme');
+          var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.classList.toggle('dark', dark);
+        } catch (e) {}
+      })();
+    </script>
+
     <!-- ===================================================================
          2. EXTERNAL ASSETS & LIBRARIES
          =================================================================== -->

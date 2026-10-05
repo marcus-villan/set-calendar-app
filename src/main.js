@@ -71,12 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
   View.elements.navSettingsBtn.addEventListener('click', () => View.switchTab('settings'));
 
   View.elements.prevMonthBtn.addEventListener('click', () => {
-    Model.currentDate.setMonth(Model.currentDate.getMonth() - 1);
+    Model.shiftMonth(-1);
     refreshCalendar();
   });
 
   View.elements.nextMonthBtn.addEventListener('click', () => {
-    Model.currentDate.setMonth(Model.currentDate.getMonth() + 1);
+    Model.shiftMonth(1);
     refreshCalendar();
   });
 
@@ -107,42 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-// Direct Theme Toggle Handler
-  const themeToggleBtn = document.getElementById('settingsThemeToggle');
-  const toggleKnob = document.getElementById('toggleKnob');
-
-  function updateThemeUI(isDark) {
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      if (toggleKnob) {
-        toggleKnob.classList.remove('translate-x-0');
-        toggleKnob.classList.add('translate-x-6');
-      }
-    } else {
-      document.documentElement.classList.remove('dark');
-      if (toggleKnob) {
-        toggleKnob.classList.remove('translate-x-6');
-        toggleKnob.classList.add('translate-x-0');
-      }
-    }
-  }
-
-  // Load initial theme state
-  const savedTheme = localStorage.getItem('theme');
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const initialDark = savedTheme ? savedTheme === 'dark' : prefersDark;
-
-  updateThemeUI(initialDark);
-
-  // Attach listener directly to the DOM node
-  if (themeToggleBtn) {
-    themeToggleBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      const isDark = !document.documentElement.classList.contains('dark');
+  // Theme: the inline script in index.html applies the saved/system theme before first paint
+  // (no white flash). Here we only handle the toggle.
+  View.elements.settingsThemeToggle.addEventListener('click', () => {
+    const isDark = !document.documentElement.classList.contains('dark');
+    try {
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
-      updateThemeUI(isDark);
-    });
-  }
+    } catch (err) {
+      console.error('Failed to save theme', err);
+    }
+    View.applyTheme(isDark);
+  });
 
   refreshCalendar();
 });

@@ -1,3 +1,5 @@
+import { newId } from './utils.js';
+
 export const Model = {
   currentDate: new Date(),
   selectedDateStr: null,
@@ -13,7 +15,7 @@ export const Model = {
         const parsed = JSON.parse(saved);
         Object.keys(parsed).forEach(date => {
           if (parsed[date] && !Array.isArray(parsed[date])) {
-            this.pins[date] = [{ id: Date.now().toString(), ...parsed[date] }];
+            this.pins[date] = [{ id: newId(), ...parsed[date] }];
           } else {
             this.pins[date] = parsed[date];
           }
@@ -23,6 +25,11 @@ export const Model = {
       console.error("Failed to load pins", err);
       this.pins = {};
     }
+  },
+
+  // Always land on the 1st: setMonth() on the 31st overflows (Jan 31 + 1 month = Mar 3).
+  shiftMonth(delta) {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + delta, 1);
   },
 
   save() {
@@ -41,7 +48,7 @@ export const Model = {
         this.pins[dateStr][idx] = { id: pinId, title, emoji };
       }
     } else {
-      this.pins[dateStr].push({ id: Date.now().toString(), title, emoji });
+      this.pins[dateStr].push({ id: newId(), title, emoji });
     }
     this.save();
   },

@@ -1,3 +1,5 @@
+import { toDateStr, dateToStr } from './utils.js';
+
 export const View = {
   elements: {},
 
@@ -29,39 +31,28 @@ export const View = {
       savePinBtn: document.getElementById('savePinBtn'),
       deletePinBtn: document.getElementById('deletePinBtn'),
       upcomingList: document.getElementById('upcomingList'),
-      settingsThemeToggle: document.getElementById('settingsThemeToggle'),
       pinCount: document.getElementById('pinCount')
     };
   },
 
+  applyTheme(isDark) {
+    document.documentElement.classList.toggle('dark', isDark);
+  },
+
   switchTab(tabName) {
-  const calendarView = document.getElementById('calendarView');
-  const settingsView = document.getElementById('settingsView');
-  const navCalendarBtn = document.getElementById('navCalendarBtn');
-  const navSettingsBtn = document.getElementById('navSettingsBtn');
+    const { calendarView, settingsView, navCalendarBtn, navSettingsBtn } = this.elements;
+    const activeClasses = ['bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-xs'];
+    const inactiveClasses = ['bg-transparent', 'text-slate-500', 'hover:text-slate-900', 'dark:hover:text-white', 'shadow-none'];
+    const showCalendar = tabName === 'calendar';
 
-  const activeClasses = ['bg-white', 'dark:bg-slate-700', 'text-slate-900', 'dark:text-white', 'shadow-xs'];
-  const inactiveClasses = ['bg-transparent', 'text-slate-500', 'hover:text-slate-900', 'dark:hover:text-white', 'shadow-none'];
+    calendarView.classList.toggle('hidden', !showCalendar);
+    settingsView.classList.toggle('hidden', showCalendar);
 
-  if (tabName === 'calendar') {
-    calendarView.classList.remove('hidden');
-    settingsView.classList.add('hidden');
-
-    navCalendarBtn.classList.add(...activeClasses);
-    navCalendarBtn.classList.remove(...inactiveClasses);
-
-    navSettingsBtn.classList.remove(...activeClasses);
-    navSettingsBtn.classList.add(...inactiveClasses);
-    } else {
-    calendarView.classList.add('hidden');
-    settingsView.classList.remove('hidden');
-
-    navSettingsBtn.classList.add(...activeClasses);
-    navSettingsBtn.classList.remove(...inactiveClasses);
-
-    navCalendarBtn.classList.remove(...activeClasses);
-    navCalendarBtn.classList.add(...inactiveClasses);
-    }
+    const [on, off] = showCalendar ? [navCalendarBtn, navSettingsBtn] : [navSettingsBtn, navCalendarBtn];
+    on.classList.add(...activeClasses);
+    on.classList.remove(...inactiveClasses);
+    off.classList.remove(...activeClasses);
+    off.classList.add(...inactiveClasses);
   },
 
   renderCalendar(currentDate, pins, onDateClick) {
@@ -77,14 +68,14 @@ export const View = {
     const prevMonthDays = new Date(year, month, 0).getDate();
 
     const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    const todayStr = dateToStr(today);
 
     for (let i = firstDayIndex - 1; i >= 0; i--) {
       this.elements.calendarGrid.appendChild(this.createDayBox(prevMonthDays - i, true));
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const dateStr = toDateStr(year, month, day);
       const isToday = dateStr === todayStr;
       const datePins = pins[dateStr] || [];
       this.elements.calendarGrid.appendChild(this.createDayBox(day, false, isToday, dateStr, datePins, onDateClick));
