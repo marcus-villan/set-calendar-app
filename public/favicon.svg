@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>set</title>
   <rect width="64" height="64" rx="15" fill="#0a0a0a"/>
-  <path d="M44 24C40 19 20 19 20 29C20 38 44 33 44 44C44 54 24 54 20 49" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- map pin: teardrop with a round cut-out (evenodd) so the black shows through -->
+  <path fill="#ff5a43" fill-rule="evenodd" d="M32 54C32 54 17 38 17 26A15 15 0 1 1 47 26C47 38 32 54 32 54ZM38 26A6 6 0 1 0 26 26A6 6 0 1 0 38 26Z"/>
 </svg>
