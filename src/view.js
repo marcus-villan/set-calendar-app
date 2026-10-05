@@ -199,7 +199,7 @@ export const View = {
 
     if (dayPins.length > 0 && !isDisabled) {
       const pinContainer = document.createElement('div');
-      pinContainer.className = "mt-1 flex items-center justify-start gap-0.5 overflow-hidden whitespace-nowrap";
+      pinContainer.className = "mt-0.5 flex items-center justify-start gap-0.5 whitespace-nowrap";
       pinContainer.setAttribute('aria-hidden', 'true');
       // A constant 2 slots (fits the narrowest phone cell), independent of window size or zoom.
       // When pins overflow, the last slot becomes a "+N" badge so nothing is silently clipped.
@@ -207,13 +207,13 @@ export const View = {
       const shown = dayPins.length > slots ? slots - 1 : dayPins.length;
       dayPins.slice(0, shown).forEach(pin => {
         const emojiSpan = document.createElement('span');
-        emojiSpan.className = "inline-block text-[13px] leading-none";
+        emojiSpan.className = "inline-block text-[15px] leading-[20px]";
         emojiSpan.textContent = pin.emoji || '📍';
         pinContainer.appendChild(emojiSpan);
       });
       if (dayPins.length > shown) {
         const moreSpan = document.createElement('span');
-        moreSpan.className = "text-[10px] font-bold leading-none text-accent";
+        moreSpan.className = "text-[11px] font-bold leading-[20px] text-accent";
         moreSpan.textContent = `+${dayPins.length - shown}`;
         pinContainer.appendChild(moreSpan);
       }
