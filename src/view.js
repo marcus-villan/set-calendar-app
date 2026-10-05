@@ -36,6 +36,19 @@ export const View = {
       statBusiestLabel: document.getElementById('statBusiestLabel'),
       statNext: document.getElementById('statNext'),
       statNextLabel: document.getElementById('statNextLabel'),
+      installBanner: document.getElementById('installBanner'),
+      installBtn: document.getElementById('installBtn'),
+      installDismissBtn: document.getElementById('installDismissBtn'),
+      installSettingsRow: document.getElementById('installSettingsRow'),
+      installSettingsText: document.getElementById('installSettingsText'),
+      installSettingsBtn: document.getElementById('installSettingsBtn'),
+      installSettingsLabel: document.getElementById('installSettingsLabel'),
+      installModal: document.getElementById('installModal'),
+      installStepsIOS: document.getElementById('installStepsIOS'),
+      installStepsManual: document.getElementById('installStepsManual'),
+      closeInstallBtn: document.getElementById('closeInstallBtn'),
+      installDoneBtn: document.getElementById('installDoneBtn'),
+      installExportBtn: document.getElementById('installExportBtn'),
       dataSummary: document.getElementById('dataSummary'),
       exportBtn: document.getElementById('exportBtn'),
       importBtn: document.getElementById('importBtn'),
@@ -550,6 +563,27 @@ export const View = {
       e.statNext.textContent = '—';
       e.statNextLabel.textContent = 'Next set';
     }
+  },
+
+  // ---------- Install prompt ----------
+  // mode: 'installed' | 'prompt' | 'ios' | 'manual' (see install.js). showBanner: decided by shouldShowBanner().
+  renderInstall(mode, showBanner) {
+    const e = this.elements;
+    e.installBanner.classList.toggle('hidden', !showBanner);
+    e.installBtn.textContent = mode === 'prompt' ? 'Install' : 'Show me how';
+
+    // Settings keeps an entry point even after the banner is dismissed; once installed there is nothing to offer.
+    e.installSettingsRow.classList.toggle('hidden', mode === 'installed');
+    e.installSettingsLabel.textContent = mode === 'prompt' ? 'Install app' : mode === 'ios' ? 'Show me how' : 'How to install';
+    e.installSettingsText.textContent = mode === 'prompt'
+      ? 'Install Set for one-tap access and a full-screen experience.'
+      : 'Add Set to your Home Screen for one-tap access.';
+  },
+
+  // Which instructions the install sheet shows.
+  showInstallSteps(isIOS) {
+    this.elements.installStepsIOS.classList.toggle('hidden', !isIOS);
+    this.elements.installStepsManual.classList.toggle('hidden', isIOS);
   },
 
   // ---------- Toast ("Deleted. Undo") ----------

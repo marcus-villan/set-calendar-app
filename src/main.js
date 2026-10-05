@@ -3,6 +3,7 @@ import { Model } from './model.js';
 import { View } from './view.js';
 import { dateToStr, lastEmoji, isValidDateStr, shortDate, weekdayDate, groupByRange, nextTimeAfter, formatTime } from './utils.js';
 import { parseBackup, backupFileName, countSets, MAX_BACKUP_BYTES } from './backup.js';
+import { isIOSDevice, isStandalone, installMode, shouldShowBanner } from './install.js';
 
 // iOS Safari ignores user-scalable=no. Its pinch-zoom (and macOS Safari's trackpad pinch) fires
 // non-standard gesture* events, which we can cancel. Double-tap zoom is handled in CSS (touch-action).
@@ -77,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshCalendar();
     refreshHome();
     refreshDataSummary();
+    refreshInstallUI();
     if (isDaySheetOpen()) renderDayList();
   }
 
@@ -195,6 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (e.key === 'Escape') {
       const top = View.topOpenModal();
       if (top === View.elements.pinModal) closePinModal();
+      else if (top === View.elements.installModal) closeInstallModal();
       else if (top === View.elements.dayDetailModal) closeDayDetail();
     }
   });
@@ -247,7 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // ---------- Backup: export / import ----------
-  View.elements.exportBtn.addEventListener('click', () => {
+  function exportBackupFile() {
     const total = countSets(Model.pins);
     if (total === 0) return View.showToast('Nothing to export yet. Add a set first.');
     const blob = new Blob([JSON.stringify(Model.exportBackup(), null, 2)], { type: 'application/json' });
@@ -260,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 10000);
     View.showToast(`Backup saved: ${plural(total, 'set')}`);
-  });
+  }
+  View.elements.exportBtn.addEventListener('click', exportBackupFile);
 
   View.elements.importBtn.addEventListener('click', () => View.elements.importFile.click());
 
@@ -283,6 +287,64 @@ document.addEventListener('DOMContentLoaded', () => {
       Model.replaceAll(snapshot);
       refreshAll();
     }, 9000);
+  });
+
+  // ---------- Add to Home Screen ----------
+  const INSTALL_DISMISSED_KEY = 'install_dismissed';
+  let deferredInstallPrompt = null; // Chrome / Edge / Android hand us this event; iOS never does
+
+  const isIOS = () => isIOSDevice({ userAgent: navigator.userAgent, platform: navigator.platform, maxTouchPoints: navigator.maxTouchPoints });
+  const currentInstallMode = () => installMode({
+    installed: isStandalone({ navigatorStandalone: navigator.standalone, displayModeStandalone: window.matchMedia('(display-mode: standalone)').matches }),
+    canPrompt: deferredInstallPrompt !== null,
+    ios: isIOS()
+  });
+  const readDismissedAt = () => { try { return localStorage.getItem(INSTALL_DISMISSED_KEY); } catch { return null; } };
+
+  function refreshInstallUI() {
+    const mode = currentInstallMode();
+    View.renderInstall(mode, shouldShowBanner({ mode, setCount: countSets(Model.pins), dismissedAt: readDismissedAt(), now: Date.now() }));
+  }
+
+  async function startInstall() {
+    if (deferredInstallPrompt) {
+      const promptEvent = deferredInstallPrompt;
+      deferredInstallPrompt = null;   // a browser install prompt can only be used once
+      promptEvent.prompt();
+      await promptEvent.userChoice;
+      refreshInstallUI();
+      return;
+    }
+    View.showInstallSteps(isIOS());
+    View.openModal(View.elements.installModal);
+  }
+
+  function closeInstallModal() {
+    View.closeModal(View.elements.installModal);
+  }
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();   // we show our own button instead of the browser's mini-bar
+    deferredInstallPrompt = e;
+    refreshInstallUI();
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    refreshInstallUI();
+    View.showToast('Added to your Home Screen');
+  });
+
+  View.elements.installBtn.addEventListener('click', startInstall);
+  View.elements.installSettingsBtn.addEventListener('click', startInstall);
+  View.elements.installDismissBtn.addEventListener('click', () => {
+    try { localStorage.setItem(INSTALL_DISMISSED_KEY, String(Date.now())); } catch { /* private mode: it will just show again */ }
+    refreshInstallUI();
+  });
+  View.elements.closeInstallBtn.addEventListener('click', closeInstallModal);
+  View.elements.installDoneBtn.addEventListener('click', closeInstallModal);
+  View.elements.installExportBtn.addEventListener('click', exportBackupFile);
+  View.elements.installModal.addEventListener('click', (e) => {
+    if (e.target === View.elements.installModal) closeInstallModal();
   });
 
   // Coming back to the app (e.g. the next morning) should show the right "today".

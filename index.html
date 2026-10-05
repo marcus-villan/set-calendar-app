@@ -138,6 +138,21 @@
              --------------------------------------------------------------- -->
         <main id="homeView" class="animate-view flex flex-grow flex-col gap-3">
 
+            <!-- "Add to Home Screen" nudge. Shown by View.renderInstall() only when it can really help. -->
+            <section id="installBanner" class="card-panel hidden !p-3" aria-label="Add Set to your Home Screen">
+                <div class="flex items-center gap-3">
+                    <img src="/icons/apple-touch-icon.png" alt="" width="44" height="44" class="h-11 w-11 shrink-0 rounded-xl">
+                    <div class="min-w-0 flex-grow">
+                        <p class="text-sm font-bold text-ink">Add Set to your Home Screen</p>
+                        <p class="text-xs text-muted">Opens full-screen, one tap away.</p>
+                    </div>
+                    <button id="installDismissBtn" type="button" class="row-action shrink-0 self-start" aria-label="Dismiss">
+                        <i class="fa-solid fa-xmark text-xs" aria-hidden="true"></i>
+                    </button>
+                </div>
+                <button id="installBtn" type="button" class="btn-solid mt-3 w-full !py-2.5">Install</button>
+            </section>
+
             <!-- Today: what is on right now, with one-tap add -->
             <section class="card-panel !p-4" aria-labelledby="todayHeading">
                 <p class="label-uppercase">Today</p>
@@ -254,6 +269,15 @@
                     <div id="paletteGroup" class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="paletteLabel"></div>
                 </div>
 
+                <!-- Install: always reachable here, even after dismissing the banner -->
+                <div id="installSettingsRow" class="border-b border-line pb-5">
+                    <h3 class="text-sm font-bold text-ink">Install app</h3>
+                    <p id="installSettingsText" class="text-xs text-muted">Add Set to your Home Screen for one-tap access.</p>
+                    <button id="installSettingsBtn" type="button" class="btn-control mt-3 w-full !py-3">
+                        <i class="fa-solid fa-square-plus mr-1.5" aria-hidden="true"></i><span id="installSettingsLabel">Add to Home Screen</span>
+                    </button>
+                </div>
+
                 <!-- Your data: sets live only on this device, so offer a backup -->
                 <div class="border-b border-line pb-5">
                     <h3 id="dataLabel" class="text-sm font-bold text-ink">Your data</h3>
@@ -319,6 +343,42 @@
         <button id="addNewPinBtn" type="button" class="btn-primary mt-2">
             <i class="fa-solid fa-plus text-xs" aria-hidden="true"></i> New Set
         </button>
+    </div>
+</div>
+
+<!-- -------------------------------------------------------------------
+     4.1b INSTALL HELP MODAL (how to add to the Home Screen)
+     ------------------------------------------------------------------- -->
+<div id="installModal" class="modal modal--sheet" data-open="false" aria-hidden="true">
+    <div id="installCard" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+        <div class="sheet-grabber desk:hidden" aria-hidden="true"></div>
+        <div class="mb-3 flex items-center justify-between border-b border-line pb-3">
+            <h3 id="installTitle" class="text-lg font-bold text-ink">Add Set to your Home Screen</h3>
+            <button id="closeInstallBtn" type="button" class="btn-icon" aria-label="Close">
+                <i class="fa-solid fa-xmark text-sm" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- iPhone / iPad: there is no install button in Safari, so we show the steps -->
+        <div id="installStepsIOS" class="hidden">
+            <ol class="space-y-3 text-sm text-ink">
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-arrow-up-from-bracket" aria-hidden="true"></i></span><span class="pt-1"><strong>Tap the Share button</strong> in Safari's toolbar.</span></li>
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-square-plus" aria-hidden="true"></i></span><span class="pt-1">Scroll down and tap <strong>Add to Home Screen</strong>.</span></li>
+                <li class="flex items-start gap-3"><span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-2 text-xs"><i class="fa-solid fa-check" aria-hidden="true"></i></span><span class="pt-1">Tap <strong>Add</strong>. Set now opens like any other app.</span></li>
+            </ol>
+            <div class="mt-4 rounded-2xl bg-surface-2 p-3 text-xs text-muted">
+                <strong class="text-ink">Heads up:</strong> on iPhone, the Home Screen app can keep its sets separately from Safari. If you already added sets here, export a backup first, then use Import backup (Settings) inside the new app.
+            </div>
+            <button id="installExportBtn" type="button" class="btn-control mt-3 w-full !py-3"><i class="fa-solid fa-download mr-1.5" aria-hidden="true"></i>Export backup first</button>
+        </div>
+
+        <!-- Other browsers without an install API -->
+        <div id="installStepsManual" class="hidden text-sm text-ink">
+            <p>Open your browser's menu and choose <strong>Install app</strong> or <strong>Add to Home Screen</strong>.</p>
+            <p class="mt-2 text-xs text-muted">If you don't see it, your browser may not support installing web apps.</p>
+        </div>
+
+        <button id="installDoneBtn" type="button" class="btn-primary mt-4">Got it</button>
     </div>
 </div>
 
