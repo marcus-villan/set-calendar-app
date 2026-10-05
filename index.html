@@ -27,8 +27,36 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <!-- Kept in sync with the page background by View.applyAppearance() -->
-    <meta name="theme-color" content="#f4f3ee">
+    <meta name="theme-color" content="#fafafa">
+    <meta name="color-scheme" content="light dark">
     <title>Set — Quick Calendar Pins</title>
+    <meta name="description" content="Set is a fast, minimal calendar for quick plans: tap a day, pin an emoji and a note, done. Works great on your phone.">
+    <meta name="application-name" content="Set">
+    <meta name="apple-mobile-web-app-title" content="Set">
+    <!-- Stop iOS from turning dates / numbers in pin titles into phone-number links -->
+    <meta name="format-detection" content="telephone=no">
+    <link rel="canonical" href="__SITE_URL__">
+
+    <!-- Icons: .ico for old browsers and crawlers, SVG for modern tabs, PNG for iOS / installs -->
+    <link rel="icon" href="/favicon.ico" sizes="32x32">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.webmanifest">
+
+    <!-- Link previews (iMessage, WhatsApp, Slack, Facebook, ...) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Set">
+    <meta property="og:title" content="Set — Quick Calendar Pins">
+    <meta property="og:description" content="Tap a day, pin an emoji and a note, done. A fast, minimal calendar for quick plans.">
+    <meta property="og:url" content="__SITE_URL__">
+    <meta property="og:image" content="__SITE_URL__og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Set: a black and white calendar app. Tap. Set. Done.">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Set — Quick Calendar Pins">
+    <meta name="twitter:description" content="Tap a day, pin an emoji and a note, done.">
+    <meta name="twitter:image" content="__SITE_URL__og-image.png">
 
     <!-- Theme bootstrap: runs before first paint so nobody sees a flash of the wrong theme.
          Mirrors View.applyAppearance(). Must stay a plain inline script (not the module below). -->
@@ -61,6 +89,7 @@
 </head>
 
 <body class="min-h-dvh select-none overflow-x-hidden">
+    <noscript><p style="padding:1rem;font:14px system-ui">Set needs JavaScript to run. Please enable it and reload.</p></noscript>
 
     <!-- ===================================================================
          3. MAIN APPLICATION CONTAINER
