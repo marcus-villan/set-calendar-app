@@ -7,37 +7,45 @@
 @custom-variant desk (@media (hover: hover) and (pointer: fine));
 
 /* =============================================================================
-   DESIGN TOKENS
-   Every color in the app comes from these variables. To try a new visual
-   direction, change the values here (and nothing else): the components below
-   and the markup only use semantic names like bg-surface / text-muted / bg-accent.
+   DESIGN TOKENS + THEMES
+   Every color in the app comes from these variables. A theme is just a set of values:
+   to add one, copy a block below, change the values, and add it to Model.palettes in
+   model.js. The components and markup only use semantic names like bg-surface /
+   text-muted / bg-accent, so nothing else has to change.
 
    --primary  = big solid things (main buttons, logo)
    --accent   = highlights (today, pins, focus, badges)
 
-   Direction: "Mono Ink" — pure black & white, one tomato-red accent.
-   (Forest, the previous direction, is kept in the comment at the bottom of this
-    block: paste its values over the ones below to switch back.)
+   How it works: <html data-theme="forest" class="dark"> picks the palette (data-theme)
+   and the mode (the .dark class). Selectors like  [data-theme="forest"]  also match any
+   *element* carrying the attribute, which is how the theme picker cards in Settings
+   preview their own palette while the rest of the page uses another.
+   Pairs checked for WCAG AA (4.5:1) contrast by scripts/check-contrast.mjs.
    ============================================================================= */
-:root {
+
+/* ---- Mono Ink: pure black & white, one tomato accent (default) ---- */
+:root,
+[data-theme="mono"] {
   color-scheme: light;
   --bg: #fafafa;
   --surface: #ffffff;
   --surface-2: #f0f0f0;
   --line: #e3e3e3;
   --ink: #0a0a0a;
-  --muted: #6b6b6b;
+  --muted: #686868;
   --primary: #0a0a0a;
   --primary-ink: #ffffff;
-  --accent: #d93a26;
+  --accent: #c9331f;
   --accent-ink: #ffffff;
   --accent-soft: #fdece8;
-  --accent-on-primary: #ff7a63; /* accent text on a --primary surface (toast) */
+  --accent-on-primary: #ff7a63;
   --danger: #b3261e;
   --danger-soft: #f6e2e0;
 }
 
-.dark {
+.dark,
+.dark [data-theme="mono"],
+[data-theme="mono"].dark {
   color-scheme: dark;
   --bg: #0a0a0a;
   --surface: #141414;
@@ -55,11 +63,119 @@
   --danger-soft: #33201f;
 }
 
-/* FOREST (previous direction)
-   light: bg #f4f3ee  surface #fcfbf8  surface-2 #ebeae3  line #dcdad0  ink #151915
-          muted #666b64  primary #1d5a3c  primary-ink #fff  accent #1d5a3c  accent-ink #fff  accent-soft #dfeae3
-   dark:  bg #0d100e  surface #151a17  surface-2 #1e2420  line #2b332e  ink #eceee9
-          muted #8e958d  primary #62c08d  primary-ink #06130b  accent #62c08d  accent-ink #06130b  accent-soft #1a2b21 */
+/* ---- Forest: warm off-white / near-black, dark green ---- */
+[data-theme="forest"] {
+  color-scheme: light;
+  --bg: #f4f3ee;
+  --surface: #fcfbf8;
+  --surface-2: #ebeae3;
+  --line: #dcdad0;
+  --ink: #151915;
+  --muted: #666b64;
+  --primary: #1d5a3c;
+  --primary-ink: #ffffff;
+  --accent: #1d5a3c;
+  --accent-ink: #ffffff;
+  --accent-soft: #dfeae3;
+  --accent-on-primary: #7fd4a3;
+  --danger: #b3261e;
+  --danger-soft: #f6e2e0;
+}
+
+.dark [data-theme="forest"],
+[data-theme="forest"].dark {
+  color-scheme: dark;
+  --bg: #0d100e;
+  --surface: #151a17;
+  --surface-2: #1e2420;
+  --line: #2b332e;
+  --ink: #eceee9;
+  --muted: #8e958d;
+  --primary: #62c08d;
+  --primary-ink: #06130b;
+  --accent: #62c08d;
+  --accent-ink: #06130b;
+  --accent-soft: #1a2b21;
+  --accent-on-primary: #0f3d26;
+  --danger: #f0857d;
+  --danger-soft: #33201f;
+}
+
+/* ---- Paper: warm cream and brown, terracotta accent ---- */
+[data-theme="paper"] {
+  color-scheme: light;
+  --bg: #f3ecdf;
+  --surface: #fbf6ec;
+  --surface-2: #ebe2d1;
+  --line: #dccfb8;
+  --ink: #2b2118;
+  --muted: #66564a;
+  --primary: #2b2118;
+  --primary-ink: #fbf6ec;
+  --accent: #a8431c;
+  --accent-ink: #ffffff;
+  --accent-soft: #f6e3d6;
+  --accent-on-primary: #e8845a;
+  --danger: #a8321f;
+  --danger-soft: #f3ddd6;
+}
+
+.dark [data-theme="paper"],
+[data-theme="paper"].dark {
+  color-scheme: dark;
+  --bg: #1a1510;
+  --surface: #231d16;
+  --surface-2: #2e261d;
+  --line: #3d3327;
+  --ink: #efe6d6;
+  --muted: #a2927c;
+  --primary: #efe6d6;
+  --primary-ink: #1a1510;
+  --accent: #e8845a;
+  --accent-ink: #1f0f07;
+  --accent-soft: #3a2418;
+  --accent-on-primary: #a8431c;
+  --danger: #f0857d;
+  --danger-soft: #3a2420;
+}
+
+/* ---- Ocean: cool blue-gray, blue accent ---- */
+[data-theme="ocean"] {
+  color-scheme: light;
+  --bg: #eef3f7;
+  --surface: #fafcfe;
+  --surface-2: #e1eaf1;
+  --line: #cfdce6;
+  --ink: #0f1b26;
+  --muted: #566a7a;
+  --primary: #0f3a5c;
+  --primary-ink: #ffffff;
+  --accent: #1560b0;
+  --accent-ink: #ffffff;
+  --accent-soft: #dcebf8;
+  --accent-on-primary: #8cc4f5;
+  --danger: #b3261e;
+  --danger-soft: #f6e2e0;
+}
+
+.dark [data-theme="ocean"],
+[data-theme="ocean"].dark {
+  color-scheme: dark;
+  --bg: #0a1218;
+  --surface: #111c25;
+  --surface-2: #1a2833;
+  --line: #26384a;
+  --ink: #e8f0f6;
+  --muted: #8ea3b3;
+  --primary: #e8f0f6;
+  --primary-ink: #0a1218;
+  --accent: #5aa9f0;
+  --accent-ink: #04101a;
+  --accent-soft: #14293b;
+  --accent-on-primary: #1560b0;
+  --danger: #f0857d;
+  --danger-soft: #33201f;
+}
 
 /* `inline` makes utilities reference var(--x) directly, so they re-theme at runtime. */
 @theme inline {
@@ -167,7 +283,8 @@ textarea {
   .nav-tab {
     @apply rounded-xl bg-transparent px-4 py-2 text-xs font-bold text-muted transition duration-200 hover:text-ink active:scale-95;
   }
-  .nav-tab[aria-current="page"] {
+  .nav-tab[aria-current="page"],
+  .nav-tab[aria-pressed="true"] {
     @apply bg-surface text-ink shadow-sm;
   }
 
@@ -182,19 +299,15 @@ textarea {
     @apply w-full rounded-2xl border border-transparent bg-surface-2 px-4 py-3 text-base font-medium text-ink placeholder-muted/70 outline-none transition duration-200 focus:border-ink;
   }
 
-  /* ---- Switch (state comes from aria-checked) ---- */
-  .switch {
-    @apply relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full bg-line p-1 transition-colors duration-200;
+  /* ---- Theme picker card: carries data-theme itself, so it previews its own palette ---- */
+  .theme-card {
+    @apply flex flex-col gap-2 rounded-2xl border-2 border-line bg-bg p-3 text-left text-ink transition duration-200 active:scale-95;
   }
-  .switch[aria-checked="true"] {
-    @apply bg-primary;
+  .theme-card[aria-pressed="true"] {
+    @apply border-ink;
   }
-  .switch-knob {
-    @apply pointer-events-none h-6 w-6 rounded-full bg-white shadow-md;
-    transition: transform 0.3s var(--ease-spring);
-  }
-  .switch[aria-checked="true"] .switch-knob {
-    transform: translateX(1.5rem);
+  .theme-swatch {
+    @apply flex h-7 overflow-hidden rounded-lg border border-line;
   }
 
   /* ---- Calendar day cells ---- */

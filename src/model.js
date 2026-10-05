@@ -8,6 +8,39 @@ export const Model = {
   emojiOptions: ['📍', '🍻', '🎬', '🍔', '✈️', '🏀', '🎮', '☕', '🎉', '🚗', '🎂', '❤️'],
   pins: {},
 
+  // Themes. Colors live in style.css (data-theme="<id>"); this list just names them.
+  // To add a theme: add a block in style.css and an entry here.
+  palettes: [
+    { id: 'mono', name: 'Mono Ink' },
+    { id: 'forest', name: 'Forest' },
+    { id: 'paper', name: 'Paper' },
+    { id: 'ocean', name: 'Ocean' }
+  ],
+  modes: ['system', 'light', 'dark'],
+  // mode: follow the device, or force light/dark. palette: which theme.
+  // (Stored under the existing 'theme' key, so values saved by older versions still work.)
+  settings: { mode: 'system', palette: 'mono' },
+
+  loadSettings() {
+    try {
+      const mode = localStorage.getItem('theme');
+      const palette = localStorage.getItem('palette');
+      if (this.modes.includes(mode)) this.settings.mode = mode;
+      if (this.palettes.some(p => p.id === palette)) this.settings.palette = palette;
+    } catch (err) {
+      console.error('Failed to load settings', err);
+    }
+  },
+
+  saveSettings() {
+    try {
+      localStorage.setItem('theme', this.settings.mode);
+      localStorage.setItem('palette', this.settings.palette);
+    } catch (err) {
+      console.error('Failed to save settings', err);
+    }
+  },
+
   init() {
     try {
       const saved = localStorage.getItem('set_app_pins');

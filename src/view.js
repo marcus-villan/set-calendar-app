@@ -20,7 +20,8 @@ export const View = {
       navSettingsBtn: document.getElementById('navSettingsBtn'),
       calendarView: document.getElementById('calendarView'),
       settingsView: document.getElementById('settingsView'),
-      settingsThemeToggle: document.getElementById('settingsThemeToggle'),
+      modeButtons: [...document.querySelectorAll('[data-mode]')],
+      paletteGroup: document.getElementById('paletteGroup'),
       dayDetailModal: document.getElementById('dayDetailModal'),
       dayDetailTitle: document.getElementById('dayDetailTitle'),
       dayPinsList: document.getElementById('dayPinsList'),
@@ -45,12 +46,53 @@ export const View = {
     };
   },
 
-  applyTheme(isDark) {
-    document.documentElement.classList.toggle('dark', isDark);
-    this.elements.settingsThemeToggle.setAttribute('aria-checked', String(isDark));
+  // mode: 'system' | 'light' | 'dark'.  palette: a theme id (see Model.palettes).
+  // The page is styled by <html data-theme="..." class="dark?">; see the tokens in style.css.
+  applyAppearance(mode, palette) {
+    const isDark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    const root = document.documentElement;
+    root.classList.toggle('dark', isDark);
+    root.dataset.theme = palette;
+
+    this.elements.modeButtons.forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === mode)));
+    this.elements.paletteGroup.querySelectorAll('[data-palette]').forEach(btn => {
+      btn.setAttribute('aria-pressed', String(btn.dataset.palette === palette));
+    });
+
     // Keep the browser chrome (Safari toolbar tint) matching the page background.
-    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', bg);
+  },
+
+  // Each card carries data-theme itself, so it previews ITS palette no matter which one is active.
+  renderPaletteOptions(palettes, onSelect) {
+    this.elements.paletteGroup.innerHTML = '';
+    palettes.forEach(({ id, name }) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'theme-card';
+      card.dataset.theme = id;
+      card.dataset.palette = id;
+      card.setAttribute('aria-label', `${name} theme`);
+
+      const swatch = document.createElement('div');
+      swatch.className = 'theme-swatch';
+      swatch.setAttribute('aria-hidden', 'true');
+      ['bg-bg', 'bg-surface-2', 'bg-primary', 'bg-accent'].forEach(colorClass => {
+        const chip = document.createElement('span');
+        chip.className = `flex-1 ${colorClass}`;
+        swatch.appendChild(chip);
+      });
+
+      const label = document.createElement('span');
+      label.className = 'text-xs font-bold';
+      label.textContent = name;
+
+      card.appendChild(swatch);
+      card.appendChild(label);
+      card.onclick = () => onSelect(id);
+      this.elements.paletteGroup.appendChild(card);
+    });
   },
 
   switchTab(tabName) {

@@ -172,18 +172,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Theme: the inline script in index.html applies the saved/system theme before first
-  // paint (no white flash). Here we sync the switch + browser chrome, and handle the toggle.
-  View.applyTheme(document.documentElement.classList.contains('dark'));
-  View.elements.settingsThemeToggle.addEventListener('click', () => {
-    const isDark = !document.documentElement.classList.contains('dark');
-    try {
-      localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    } catch (err) {
-      console.error('Failed to save theme', err);
-    }
-    View.applyTheme(isDark);
+  // Appearance. The inline script in index.html already applied the saved theme before first
+  // paint (no flash); here we load the same settings into the model and wire up the controls.
+  Model.loadSettings();
+  const applyAppearance = () => View.applyAppearance(Model.settings.mode, Model.settings.palette);
+
+  View.renderPaletteOptions(Model.palettes, (id) => {
+    Model.settings.palette = id;
+    Model.saveSettings();
+    applyAppearance();
   });
+  View.elements.modeButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      Model.settings.mode = btn.dataset.mode;
+      Model.saveSettings();
+      applyAppearance();
+    });
+  });
+  // In "System" mode, follow the device live (e.g. iOS switching to dark at sunset).
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (Model.settings.mode === 'system') applyAppearance();
+  });
+  applyAppearance();
 
   refreshCalendar();
 });

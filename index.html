@@ -26,18 +26,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <!-- Kept in sync with the page background by View.applyTheme() -->
+    <!-- Kept in sync with the page background by View.applyAppearance() -->
     <meta name="theme-color" content="#f4f3ee">
     <title>Set — Quick Calendar Pins</title>
 
-    <!-- Theme bootstrap: runs before first paint so dark-mode users never see a white flash.
-         Must stay a plain inline script (not the module below). -->
+    <!-- Theme bootstrap: runs before first paint so nobody sees a flash of the wrong theme.
+         Mirrors View.applyAppearance(). Must stay a plain inline script (not the module below). -->
     <script>
       (function () {
         try {
-          var saved = localStorage.getItem('theme');
-          var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
-          document.documentElement.classList.toggle('dark', dark);
+          var mode = localStorage.getItem('theme');       // 'system' | 'light' | 'dark'
+          var palette = localStorage.getItem('palette');  // a theme id
+          var dark = mode === 'dark' || (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.classList.toggle('dark', dark);
+          if (palette && /^[a-z]+$/.test(palette)) root.setAttribute('data-theme', palette);
         } catch (e) {}
       })();
     </script>
@@ -157,15 +160,22 @@
             </h2>
             <div class="card-panel space-y-6 !p-5">
 
-                <!-- Dark / Light Appearance Toggle Row -->
-                <div class="flex items-center justify-between border-b border-line pb-4">
-                    <div>
-                        <h3 id="themeLabel" class="text-sm font-bold text-ink">Appearance Mode</h3>
-                        <p class="text-xs text-muted">Choose your preferred light or dark view</p>
+                <!-- Appearance Mode: follow the device, or force light / dark -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="modeLabel" class="text-sm font-bold text-ink">Appearance</h3>
+                    <p class="text-xs text-muted">Match your device, or pick light or dark</p>
+                    <div class="nav-seg mt-3 flex w-full" role="group" aria-labelledby="modeLabel">
+                        <button type="button" data-mode="system" aria-pressed="true" class="nav-tab flex-1">System</button>
+                        <button type="button" data-mode="light" aria-pressed="false" class="nav-tab flex-1">Light</button>
+                        <button type="button" data-mode="dark" aria-pressed="false" class="nav-tab flex-1">Dark</button>
                     </div>
-                    <button id="settingsThemeToggle" type="button" role="switch" aria-checked="false" aria-labelledby="themeLabel" class="switch">
-                        <span id="toggleKnob" class="switch-knob"></span>
-                    </button>
+                </div>
+
+                <!-- Theme picker (cards are rendered by View.renderPaletteOptions) -->
+                <div class="border-b border-line pb-5">
+                    <h3 id="paletteLabel" class="text-sm font-bold text-ink">Theme</h3>
+                    <p class="text-xs text-muted">Pick a color theme. It works in light and dark.</p>
+                    <div id="paletteGroup" class="mt-3 grid grid-cols-2 gap-2" role="group" aria-labelledby="paletteLabel"></div>
                 </div>
 
                 <!-- Application Information Metadata -->
