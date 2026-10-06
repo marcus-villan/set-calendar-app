@@ -12,17 +12,19 @@ export function describeUser(user) {
   return { name, email, avatar };
 }
 
-// If sign-in fails, Supabase sends the person back with `error_description` in the query string or the
-// #fragment. Returns a short, human message (or null if there was no error).
+// If sign-in fails, Supabase sends the person back with `error` / `error_description` in the query
+// string or the #fragment. We only use that to pick one of OUR fixed messages: the text itself is
+// never shown, because anyone can craft a link with any text in it (a phishing trick like
+// "Sign-in failed, go to evil-site.com").
 export function readAuthError(href) {
   let url;
   try { url = new URL(href); } catch { return null; }
   const params = new URLSearchParams(url.search);
   new URLSearchParams(url.hash.replace(/^#/, '')).forEach((v, k) => { if (!params.has(k)) params.set(k, v); });
-  const description = params.get('error_description') ?? params.get('error');
-  if (!description) return null;
-  if (/access_denied/i.test(description) || /access_denied/i.test(params.get('error') ?? '')) return 'Sign-in was cancelled.';
-  return description.replace(/\+/g, ' ').slice(0, 160);
+  const code = `${params.get('error') ?? ''} ${params.get('error_code') ?? ''} ${params.get('error_description') ?? ''}`;
+  if (!code.trim()) return null;
+  if (/access_denied|cancel/i.test(code)) return 'Sign-in was cancelled.';
+  return "Sign-in didn't complete. Please try again.";
 }
 
 // Remove the sign-in leftovers (error params) from a URL without touching anything else.

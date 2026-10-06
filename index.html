@@ -58,38 +58,27 @@
     <meta name="twitter:description" content="Tap a day, pin an emoji and a note, done.">
     <meta name="twitter:image" content="__SITE_URL__og-image.png">
 
-    <!-- Theme bootstrap: runs before first paint so nobody sees a flash of the wrong theme.
-         Mirrors View.applyAppearance(). Must stay a plain inline script (not the module below). -->
-    <script>
-      (function () {
-        try {
-          var mode = localStorage.getItem('theme');       // 'system' | 'light' | 'dark'
-          var palette = localStorage.getItem('palette');  // a theme id
-          var dark = mode === 'dark' || (mode !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          var root = document.documentElement;
-          root.classList.toggle('dark', dark);
-          if (palette && /^[a-z]+$/.test(palette)) root.setAttribute('data-theme', palette);
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Security policy (added to the BUILT page by vite.config.js; the dev server needs looser rules).
+         See the comment there for what each rule does. -->
+    <!--CSP-->
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <!-- Boot script: clickjacking guard + theme before first paint. A separate file (not inline)
+         so the policy above can forbid every inline script. Must stay a plain blocking script. -->
+    <script src="%BASE_URL%boot.js"></script>
 
     <!-- ===================================================================
          2. EXTERNAL ASSETS & LIBRARIES
+         Nothing is loaded from other websites: the Inter font and the icons are bundled with
+         the app (imported in src/main.js), so there is no third party to track users or to
+         serve tampered code, and everything works offline.
          =================================================================== -->
-    <!-- FontAwesome Vector Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- Google Fonts: Inter -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
     <!-- Application Entry Script (ES Module) -->
     <script type="module" src="/src/main.js"></script>
 </head>
 
 <body class="min-h-dvh select-none overflow-x-hidden">
-    <noscript><p style="padding:1rem;font:14px system-ui">Set needs JavaScript to run. Please enable it and reload.</p></noscript>
+    <noscript><p class="p-4 text-sm">Set needs JavaScript to run. Please enable it and reload.</p></noscript>
 
     <!-- ===================================================================
          3. MAIN APPLICATION CONTAINER
@@ -339,7 +328,7 @@
     </div>
 
     <!-- Floating "add a set" button, aligned to the app column. Shown on Home + Calendar. -->
-    <div id="fabWrap" class="pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[28rem] justify-end px-4" style="padding-bottom: calc(1rem + env(safe-area-inset-bottom))">
+    <div id="fabWrap" class="fab-wrap pointer-events-none fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[28rem] justify-end px-4">
         <button id="fabAdd" type="button" class="fab pointer-events-auto" aria-label="Add a set">
             <i class="fa-solid fa-plus" aria-hidden="true"></i>
         </button>

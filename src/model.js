@@ -1,5 +1,5 @@
 import { newId, isValidTime, daysBetween } from './utils.js';
-import { buildBackup, mergePins } from './backup.js';
+import { buildBackup, mergePins, sanitizePins } from './backup.js';
 
 export const Model = {
   currentDate: new Date(),
@@ -48,14 +48,17 @@ export const Model = {
       const saved = localStorage.getItem('set_app_pins');
       if (saved) {
         const parsed = JSON.parse(saved);
-        Object.keys(parsed).forEach(date => {
-          if (parsed[date] && !Array.isArray(parsed[date])) {
-            this.pins[date] = [{ id: newId(), ...parsed[date] }];
-          } else {
-            this.pins[date] = parsed[date];
+        // The very first version stored one object per day; wrap those in a list.
+        const upgraded = {};
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          for (const date of Object.keys(parsed)) {
+            const value = parsed[date];
+            upgraded[date] = value && typeof value === 'object' && !Array.isArray(value) ? [value] : value;
           }
-          this.sortDay(date);
-        });
+        }
+        // Never trust storage: rebuild every set, dropping anything malformed (see backup.js).
+        this.pins = sanitizePins(upgraded).pins;
+        Object.keys(this.pins).forEach(date => this.sortDay(date));
       }
     } catch (err) {
       console.error("Failed to load pins", err);

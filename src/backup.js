@@ -47,6 +47,29 @@ function cleanPin(raw) {
   };
 }
 
+// Rebuild a whole { date: [sets] } object from untrusted data, keeping only valid days and sets.
+// Used for imported files AND for whatever is found in localStorage at startup (storage can be
+// corrupted, or edited by hand or by a browser extension).
+export function sanitizePins(source) {
+  const pins = {};
+  let count = 0;
+  let skipped = 0;
+  if (!isPlainObject(source)) return { pins, count, skipped };
+  for (const key of Object.keys(source)) {
+    const list = source[key];
+    const size = Array.isArray(list) ? list.length : 1;
+    if (!isValidDateStr(key) || !Array.isArray(list)) { skipped += size; continue; }
+    for (const raw of list) {
+      if (count >= MAX_SETS) { skipped += 1; continue; }
+      const pin = cleanPin(raw);
+      if (!pin) { skipped += 1; continue; }
+      (pins[key] ??= []).push(pin);
+      count += 1;
+    }
+  }
+  return { pins, count, skipped };
+}
+
 // text -> { ok: true, pins, count, skipped } or { ok: false, error }.
 // `skipped` counts sets that were dropped because they were invalid.
 export function parseBackup(text) {
@@ -67,22 +90,7 @@ export function parseBackup(text) {
   const looksLikeBackup = isPlainObject(data.pins) || data.app === 'set-calendar' || dateKeys.length > 0;
   if (!looksLikeBackup) return { ok: false, error: "That file doesn't look like a Set backup." };
 
-  const pins = {};
-  let count = 0;
-  let skipped = 0;
-
-  for (const key of Object.keys(source)) {
-    const list = source[key];
-    const size = Array.isArray(list) ? list.length : 1;
-    if (!isValidDateStr(key) || !Array.isArray(list)) { skipped += size; continue; }
-    for (const raw of list) {
-      if (count >= MAX_SETS) { skipped += 1; continue; }
-      const pin = cleanPin(raw);
-      if (!pin) { skipped += 1; continue; }
-      (pins[key] ??= []).push(pin);
-      count += 1;
-    }
-  }
+  const { pins, count, skipped } = sanitizePins(source);
 
   if (count === 0) return { ok: false, error: skipped > 0 ? 'No usable sets were found in that file.' : 'That backup has no sets in it.' };
   return { ok: true, pins, count, skipped };

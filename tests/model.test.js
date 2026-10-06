@@ -154,3 +154,28 @@ test('init loads saved sets, upgrades the very old single-pin format, and sorts 
   assert.ok(Model.pins['2026-10-01'][0].id);
   assert.deepEqual(titles('2026-10-02'), ['early', 'late']);
 });
+
+test('init survives corrupted or tampered storage instead of crashing or trusting it', () => {
+  for (const junk of ['not json', '[1,2,3]', '"a string"', 'null', '42']) {
+    store.set('set_app_pins', junk);
+    Model.pins = {};
+    assert.doesNotThrow(() => Model.init(), junk);
+    assert.deepEqual(Model.pins, {}, junk);
+  }
+  store.set('set_app_pins', JSON.stringify({
+    '2026-10-05': [{ id: 'ok-1', title: 'Fine', emoji: '🍔' }, null, 'x', { title: '' }, { id: 'a/b', title: 'T'.repeat(99), note: 'N'.repeat(999), time: '99:99', evil: true }],
+    'not-a-date': [{ title: 'ghost' }],
+    '2026-02-31': [{ title: 'ghost' }],
+    '2026-10-06': 'not a list'
+  }));
+  Model.pins = {};
+  Model.init();
+  assert.deepEqual(Object.keys(Model.pins), ['2026-10-05']);
+  const [fine, clamped] = Model.pins['2026-10-05'];
+  assert.equal(fine.title, 'Fine');
+  assert.equal(clamped.title.length, 32);
+  assert.equal(clamped.note.length, 120);
+  assert.equal(clamped.time, '');
+  assert.equal('evil' in clamped, false);
+  assert.match(clamped.id, /^[\w-]{1,64}$/);
+});

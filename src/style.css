@@ -179,7 +179,7 @@
 
 /* `inline` makes utilities reference var(--x) directly, so they re-theme at runtime. */
 @theme inline {
-  --font-sans: 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+  --font-sans: 'Inter Variable', 'Inter', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -373,6 +373,9 @@ textarea {
   }
 
   /* ---- Floating add button (hidden while a modal is open) ---- */
+  .fab-wrap {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));   /* clear the iPhone home bar */
+  }
   .fab {
     @apply flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl text-primary-ink shadow-xl;
     transition: transform 0.3s var(--ease-spring), opacity 0.2s ease;

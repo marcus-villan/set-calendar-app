@@ -17,11 +17,14 @@ test('readAuthError reads errors from the query string or the #fragment, and ign
   const base = 'https://marcus-villan.github.io/set-calendar-app/';
   assert.equal(readAuthError(base), null);
   assert.equal(readAuthError(base + '?tab=settings&code=abc'), null);
-  assert.equal(readAuthError(base + '?error=server_error&error_description=Unable+to+exchange+external+code'), 'Unable to exchange external code');
+  assert.equal(readAuthError(base + '?error=server_error&error_description=Unable+to+exchange+external+code'), "Sign-in didn't complete. Please try again.");
   assert.equal(readAuthError(base + '#error=access_denied&error_description=User+denied+access'), 'Sign-in was cancelled.');
   assert.equal(readAuthError(base + '?error=access_denied'), 'Sign-in was cancelled.');
   assert.equal(readAuthError('not a url'), null);
-  assert.ok(readAuthError(base + '?error_description=' + 'x'.repeat(500)).length <= 160);
+  // text from the URL is NEVER shown (anyone can craft a link with any text)
+  const phish = readAuthError(base + '?error_description=Sign-in+failed.+Go+to+evil-site.com+to+fix+your+account');
+  assert.equal(phish, "Sign-in didn't complete. Please try again.");
+  assert.ok(!/evil/.test(readAuthError(base + '#error=x&error_description=evil-site.com')));
 });
 
 test('stripAuthParams removes only the sign-in leftovers and keeps the rest (including a pending ?code)', () => {
