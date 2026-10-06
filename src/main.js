@@ -6,6 +6,8 @@ import { parseBackup, backupFileName, countSets, MAX_BACKUP_BYTES } from './back
 import { isIOSDevice, isStandalone, installMode, shouldShowBanner } from './install.js';
 import { describeUser, readAuthError, stripAuthParams } from './account.js';
 import { onAuthChange, signInWithGoogle, signOut } from './auth.js';
+import { createSyncEngine } from './syncEngine.js';
+import { supabase } from './supabase.js';
 
 // iOS Safari ignores user-scalable=no. Its pinch-zoom (and macOS Safari's trackpad pinch) fires
 // non-standard gesture* events, which we can cancel. Double-tap zoom is handled in CSS (touch-action).
@@ -21,6 +23,30 @@ document.addEventListener('DOMContentLoaded', () => {
   View.bindElements();
 
   const todayStr = () => dateToStr(new Date());
+
+  // ---------- Cloud sync ----------
+  // The engine uploads/downloads sets for the signed-in person (rules in sync.js). When nobody is
+  // signed in every call below does nothing, so the app works exactly as before.
+  const sync = createSyncEngine({
+    client: supabase,
+    getPins: () => Model.pins,
+    setPins: (pins) => {
+      Model.replaceAll(pins);
+      Object.keys(Model.pins).forEach(dateStr => Model.sortDay(dateStr));
+      Model.save();
+      refreshAll();
+    },
+    onStatus: (status) => renderSyncStatus(status)
+  });
+
+  function renderSyncStatus({ state, at, message }) {
+    const time = at ? new Date(at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '';
+    if (state === 'syncing') return View.renderSyncStatus('Syncing…', { busy: true });
+    if (state === 'offline') return View.renderSyncStatus("You're offline. Changes will upload when you're back online.");
+    if (state === 'error') return View.renderSyncStatus(`Couldn't sync (${message}). Will try again shortly.`, { isError: true });
+    View.renderSyncStatus(time ? `Synced at ${time}` : 'Not synced yet');
+    refreshDataSummary();
+  }
   const isDaySheetOpen = () => View.elements.dayDetailModal.dataset.open === 'true';
 
   // ---------- Rendering ----------
@@ -70,9 +96,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function refreshDataSummary() {
     const total = countSets(Model.pins);
     const days = Object.keys(Model.pins).length;
+    const where = sync.isSignedIn() ? 'saved to your account' : 'stored on this device only';
     View.elements.dataSummary.textContent = total === 0
-      ? 'No sets yet. Everything you add is stored on this device only.'
-      : `${plural(total, 'set')} across ${plural(days, 'day')}, stored on this device only.`;
+      ? (sync.isSignedIn() ? 'No sets yet. Everything you add is saved to your account.' : 'No sets yet. Everything you add is stored on this device only.')
+      : `${plural(total, 'set')} across ${plural(days, 'day')}, ${where}.`;
   }
 
   // Anything that changes sets calls this, so every screen stays in sync.
@@ -82,6 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     refreshDataSummary();
     refreshInstallUI();
     if (isDaySheetOpen()) renderDayList();
+    sync.notifyLocalChange();   // upload it if someone is signed in (no-op otherwise)
   }
 
   // Month index lets us pick the slide direction for any jump (prev/next/Today).
@@ -351,16 +379,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Coming back to the app (e.g. the next morning) should show the right "today".
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) refreshAll();
+    if (document.hidden) return;
+    refreshAll();
+    sync.schedule(0);   // also pick up changes made on other devices
   });
+  window.addEventListener('online', () => sync.schedule(0));
 
   // ---------- Account (Google sign-in) ----------
   let signInError = readAuthError(location.href) ?? ''; // set when Google sends the person back with a problem
   let currentUser = null;
-
-  const runningAs = () => (isStandalone({ navigatorStandalone: navigator.standalone, displayModeStandalone: window.matchMedia('(display-mode: standalone)').matches })
-    ? 'Home Screen app' : 'browser');
-  View.elements.accountContext.textContent = `Running as: ${runningAs()}`; // SPIKE (see index.html)
 
   function renderAccount() {
     View.renderAccount(describeUser(currentUser), signInError);
@@ -373,15 +400,36 @@ document.addEventListener('DOMContentLoaded', () => {
     if (error) { signInError = error.message; renderAccount(); }
   });
 
+  View.elements.syncNowBtn.addEventListener('click', () => sync.syncNow());
+
+  // Signing out removes the sets from this device (they stay in the account). Anything that has not
+  // uploaded yet would be lost, so upload first and warn if that is not possible (e.g. offline).
   View.elements.signOutBtn.addEventListener('click', async () => {
+    if (sync.hasPending()) await sync.syncNow();
+    if (sync.hasPending() && !window.confirm("Some changes haven't been saved to your account yet (you may be offline). Sign out anyway? Those changes will be lost.")) return;
+
     const error = await signOut();
-    if (error) signInError = error.message;
+    if (error) { signInError = error.message; return renderAccount(); }
+    sync.setUser(null);
+    sync.reset();
+    Model.replaceAll({});
+    currentUser = null;
     renderAccount();
+    refreshAll();
+    View.showToast('Signed out. Your sets are safe in your account.');
   });
 
+  // Fires at startup, on sign-in/out, and on token refresh. (Supabase warns against calling it
+  // back from inside this callback, so the sync start is deferred with setTimeout.)
+  // If a session simply expires, syncing stops but the sets stay on the device; only the
+  // Sign out button clears them.
   onAuthChange((user) => {
     currentUser = user;
     renderAccount();
+    setTimeout(() => {
+      sync.setUser(user);
+      refreshDataSummary();
+    }, 0);
   });
 
   // Coming back from Google lands on "?tab=settings": open Settings, then tidy the address bar.

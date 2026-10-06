@@ -292,11 +292,13 @@
                                 <p id="accountEmail" class="truncate text-xs text-muted"></p>
                             </div>
                         </div>
-                        <button id="signOutBtn" type="button" class="btn-control mt-3 w-full !py-3">Sign out</button>
+                        <!-- Sync state: "Synced at 7:42 PM", "Syncing…", offline, or an error -->
+                        <p id="syncStatus" class="mt-3 text-xs text-muted" role="status" aria-live="polite"></p>
+                        <div class="mt-3 grid grid-cols-2 gap-2">
+                            <button id="syncNowBtn" type="button" class="btn-control !py-3"><i class="fa-solid fa-rotate mr-1.5" aria-hidden="true"></i>Sync now</button>
+                            <button id="signOutBtn" type="button" class="btn-control !py-3">Sign out</button>
+                        </div>
                     </div>
-
-                    <!-- SPIKE: shows how the app is running, to test sign-in on iPhone. Remove once sign-in is settled. -->
-                    <p id="accountContext" class="mt-3 text-[11px] text-muted"></p>
                 </div>
 
                 <!-- Install: always reachable here, even after dismissing the banner -->

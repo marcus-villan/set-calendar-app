@@ -46,7 +46,8 @@ export const View = {
       accountName: document.getElementById('accountName'),
       accountEmail: document.getElementById('accountEmail'),
       signOutBtn: document.getElementById('signOutBtn'),
-      accountContext: document.getElementById('accountContext'),
+      syncStatus: document.getElementById('syncStatus'),
+      syncNowBtn: document.getElementById('syncNowBtn'),
       installBanner: document.getElementById('installBanner'),
       installBtn: document.getElementById('installBtn'),
       installDismissBtn: document.getElementById('installDismissBtn'),
@@ -587,7 +588,7 @@ export const View = {
     e.googleSignInBtn.disabled = false;
     e.googleSignInLabel.textContent = 'Continue with Google';
     e.accountText.textContent = person
-      ? 'Signed in. Cloud sync for your sets is coming next.'
+      ? 'Your sets are saved to this account and sync across your devices.'
       : 'Sign in to back up your sets and use them on all your devices.';
     if (person) {
       e.accountName.textContent = person.name;
@@ -595,6 +596,15 @@ export const View = {
       e.accountAvatar.classList.toggle('hidden', !person.avatar);
       if (person.avatar) e.accountAvatar.src = person.avatar;
     }
+  },
+
+  // text: e.g. "Synced at 7:42 PM". isError colors it; busy disables the button while a sync runs.
+  renderSyncStatus(text, { isError = false, busy = false } = {}) {
+    const e = this.elements;
+    e.syncStatus.textContent = text;
+    e.syncStatus.classList.toggle('text-danger', isError);
+    e.syncStatus.classList.toggle('text-muted', !isError);
+    e.syncNowBtn.disabled = busy;
   },
 
   setSigningIn() {
