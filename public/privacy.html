@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- This page has no scripts at all, and the policy keeps it that way. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="color-scheme" content="light dark">
+  <title>Privacy — Set</title>
+  <meta name="description" content="What the Set calendar app stores, where it is kept, and how to delete it.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    :root { --bg: #fafafa; --ink: #0a0a0a; --muted: #686868; --line: #e3e3e3; --accent: #c9331f; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #0a0a0a; --ink: #f5f5f5; --muted: #9a9a9a; --line: #2e2e2e; --accent: #ff6a52; } }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+           padding: max(1.25rem, env(safe-area-inset-top)) 1.25rem max(2.5rem, env(safe-area-inset-bottom)); }
+    main { max-width: 40rem; margin: 0 auto; }
+    a { color: inherit; text-underline-offset: 3px; }
+    .back { display: inline-block; margin-bottom: 1.5rem; font-weight: 600; font-size: 0.9rem; }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 0.25rem; letter-spacing: -0.02em; }
+    h2 { font-size: 1.1rem; margin: 2rem 0 0.4rem; }
+    p, li { color: var(--ink); }
+    .muted { color: var(--muted); font-size: 0.9rem; }
+    ul { padding-left: 1.2rem; }
+    li { margin: 0.3rem 0; }
+    .card { border: 1px solid var(--line); border-radius: 1rem; padding: 1rem 1.1rem; margin: 1.25rem 0; }
+    .card strong { color: var(--accent); }
+    hr { border: 0; border-top: 1px solid var(--line); margin: 2rem 0; }
+  </style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">&larr; Back to Set</a>
+  <h1>Privacy</h1>
+  <p class="muted">Last updated: October 6, 2026</p>
+
+  <div class="card">
+    <strong>The short version:</strong> Set stores your plans so you can see them. If you don't sign in, they never
+    leave your device. If you do sign in, they are saved to your account so they appear on your other devices.
+    There are no ads, no analytics, and no trackers, and your data is never sold or shared.
+  </div>
+
+  <h2>Who runs Set</h2>
+  <p>Set is a personal project by Marcus Villanueva. It is not a company product.</p>
+
+  <h2>What is stored</h2>
+  <ul>
+    <li><strong>Your sets:</strong> the date, title, emoji, optional time, and optional note that you type.</li>
+    <li><strong>Your settings:</strong> your theme and light/dark choice, kept on your device.</li>
+    <li><strong>If you sign in with Google:</strong> your name, email address, and the link to your Google profile
+      picture, which Google shares when you approve the sign-in. Set never sees your Google password and asks for no
+      other Google data (no contacts, no calendar, no files).</li>
+  </ul>
+
+  <h2>Where it is kept</h2>
+  <ul>
+    <li><strong>Not signed in:</strong> only in your browser's storage on your device. Nothing is sent anywhere.</li>
+    <li><strong>Signed in:</strong> also in a database hosted by Supabase (in Singapore). Each account can read and
+      change only its own sets; this is enforced by the database itself.</li>
+    <li>The website is hosted on GitHub Pages. Like any web host, GitHub can see technical details of requests, such
+      as your IP address. See GitHub's own privacy statement for how they handle that.</li>
+  </ul>
+
+  <h2>What Set does not do</h2>
+  <ul>
+    <li>No advertising, analytics, or tracking of any kind.</li>
+    <li>No selling or sharing of your data with anyone.</li>
+    <li>No code or fonts loaded from other websites while you use the app.</li>
+    <li>Nobody reads your sets. They are only used to show them back to you.</li>
+  </ul>
+
+  <h2>Your controls</h2>
+  <ul>
+    <li><strong>Export:</strong> Settings &rarr; Export backup saves a copy of your sets as a file.</li>
+    <li><strong>Sign out:</strong> removes your sets from that device. They stay in your account.</li>
+    <li><strong>Delete everything:</strong> Settings &rarr; Account &rarr; Delete my account and data permanently
+      deletes your account and every set saved to it, right away. This cannot be undone.</li>
+    <li>Sets you delete are kept in your account as hidden "deleted" markers so the deletion reaches your other
+      devices. Deleting your account removes those too.</li>
+  </ul>
+
+  <h2>Security</h2>
+  <p>The app is served over HTTPS, loads nothing from third parties, and blocks injected scripts. Sign-in is handled
+    by Google and Supabase. No system is perfectly secure, so please don't store passwords or other secrets in a set.</p>
+
+  <h2>Children</h2>
+  <p>Set is not directed at children under 13.</p>
+
+  <h2>Changes and contact</h2>
+  <p>If this policy changes, the date at the top will change. Questions or requests:
+    <a href="https://github.com/marcus-villan/set-calendar-app/issues" rel="noopener noreferrer">open an issue on GitHub</a>.</p>
+
+  <hr>
+  <a class="back" href="./">&larr; Back to Set</a>
+</main>
+</body>
+</html>

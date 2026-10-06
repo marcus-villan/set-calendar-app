@@ -48,6 +48,7 @@ export const View = {
       signOutBtn: document.getElementById('signOutBtn'),
       syncStatus: document.getElementById('syncStatus'),
       syncNowBtn: document.getElementById('syncNowBtn'),
+      deleteAccountBtn: document.getElementById('deleteAccountBtn'),
       installBanner: document.getElementById('installBanner'),
       installBtn: document.getElementById('installBtn'),
       installDismissBtn: document.getElementById('installDismissBtn'),

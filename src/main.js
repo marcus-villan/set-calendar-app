@@ -7,7 +7,7 @@ import { dateToStr, lastEmoji, isValidDateStr, shortDate, weekdayDate, groupByRa
 import { parseBackup, backupFileName, countSets, MAX_BACKUP_BYTES } from './backup.js';
 import { isIOSDevice, isStandalone, installMode, shouldShowBanner } from './install.js';
 import { describeUser, readAuthError, stripAuthParams } from './account.js';
-import { onAuthChange, signInWithGoogle, signOut } from './auth.js';
+import { onAuthChange, signInWithGoogle, signOut, signOutLocal, deleteAccount } from './auth.js';
 import { createSyncEngine } from './syncEngine.js';
 import { supabase } from './supabase.js';
 
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     signInError = '';
     View.setSigningIn();
     const error = await signInWithGoogle(); // on success the browser leaves for Google, so we only get here on failure
-    if (error) { signInError = error.message; renderAccount(); }
+    if (error) { signInError = "Couldn't start sign-in. Check your connection and try again."; renderAccount(); }
   });
 
   View.elements.syncNowBtn.addEventListener('click', () => sync.syncNow());
@@ -411,14 +411,29 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sync.hasPending() && !window.confirm("Some changes haven't been saved to your account yet (you may be offline). Sign out anyway? Those changes will be lost.")) return;
 
     const error = await signOut();
-    if (error) { signInError = error.message; return renderAccount(); }
+    if (error) { signInError = "Couldn't sign out. Please try again."; return renderAccount(); }
+    clearThisDevice('Signed out. Your sets are safe in your account.');
+  });
+
+  // Remove the account's sets and all sync state from this device.
+  function clearThisDevice(message) {
     sync.setUser(null);
     sync.reset();
     Model.replaceAll({});
     currentUser = null;
     renderAccount();
     refreshAll();
-    View.showToast('Signed out. Your sets are safe in your account.');
+    View.showToast(message);
+  }
+
+  View.elements.deleteAccountBtn.addEventListener('click', async () => {
+    if (!window.confirm('Delete your account?\n\nThis permanently deletes your account and every set saved to it, on all your devices. It cannot be undone.')) return;
+    View.elements.deleteAccountBtn.disabled = true;
+    const error = await deleteAccount();
+    View.elements.deleteAccountBtn.disabled = false;
+    if (error) return View.showToast("Couldn't delete the account. Check your connection and try again.");
+    await signOutLocal();
+    clearThisDevice('Account deleted.');
   });
 
   // Fires at startup, on sign-in/out, and on token refresh. (Supabase warns against calling it
@@ -467,3 +482,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderAccount();
   refreshAll();
 });
+
+// Offline support + installability (see public/sw.js). Production only: in development the service
+// worker would serve stale files while you edit.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch((err) => console.error('Service worker registration failed', err));
+  });
+}

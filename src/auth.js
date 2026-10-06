@@ -18,6 +18,20 @@ export async function signInWithGoogle() {
   return error;
 }
 
+// Clears the session on THIS device only, without asking the server (used after the account itself
+// was deleted, when the server no longer knows the session).
+export async function signOutLocal() {
+  await supabase.auth.signOut({ scope: 'local' });
+}
+
+// Asks the server function to delete the signed-in account and all of its sets. The function reads
+// WHO to delete from the verified login token, never from what we send (see
+// supabase/functions/delete-account/index.ts).
+export async function deleteAccount() {
+  const { error } = await supabase.functions.invoke('delete-account', { body: { confirm: 'DELETE' } });
+  return error;
+}
+
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   return error;
